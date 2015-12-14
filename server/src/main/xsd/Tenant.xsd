@@ -11,18 +11,14 @@
            targetNamespace="http://jaxb.hiinoono.com"
            elementFormDefault="qualified">
   
-   
-    <xs:element name="siteInfo" type="siteInfo" />
-    
-    <xs:complexType name="siteInfo">
+    <xs:element name="tenant" type="hn:tenant" />
+     
+    <xs:complexType name="tenant">
         <xs:sequence>
             <xs:element name="name"
                         maxOccurs="1"
                         type="xs:string"/>
-            <xs:element name="version"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="uri"
+            <xs:element name="email"
                         maxOccurs="1"
                         type="xs:string"/>
         </xs:sequence>  

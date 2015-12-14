@@ -36,6 +36,16 @@
 
 
     <xs:complexType name="status">
+        <xs:annotation>
+            <xs:appinfo>
+                <jaxb:class name="Status">
+                    <jaxb:javadoc>
+                        A &lt;b>Purchase Order&lt;/b> consists of 
+                        addresses and items.
+                    </jaxb:javadoc>
+                </jaxb:class>
+            </xs:appinfo>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="messages"
                         maxOccurs="unbounded"
@@ -55,11 +65,7 @@
                 </xs:simpleType>
             </xs:element>
         </xs:sequence>  
-        <xs:annotation>
-            <xs:appinfo>
-                <xjc:property generateIsSetMethod="true"/>
-            </xs:appinfo>
-        </xs:annotation>
+       
     </xs:complexType>
     
 </xs:schema>
