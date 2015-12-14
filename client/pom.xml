@@ -21,7 +21,16 @@
         </dependencies>
     </dependencyManagement>
 
-    <dependencies>      
+    <dependencies>  
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-moxy</artifactId>
+        </dependency>
+        <!-- Needs to be 2nd in list/classpath  -->
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-jaxb</artifactId>
+        </dependency>   
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
@@ -70,6 +79,33 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.jvnet.ws.wadl</groupId>
+                <artifactId>wadl-client-plugin</artifactId>
+                <version>1.1.6</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <packageName>com.hiinoono.rest.api.model</packageName>
+                    <autoPackaging>true</autoPackaging>
+                    <generationStyle>jaxrs20</generationStyle>
+                    <targets>
+                        <url>http://localhost:8080/api/application.wadl</url>
+                    </targets>
+                    <customClassNames>
+                        <property>
+                            <name>http://localhost:8080/api/</name>
+                            <value>HClient</value>
+                        </property>
+                    </customClassNames>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>

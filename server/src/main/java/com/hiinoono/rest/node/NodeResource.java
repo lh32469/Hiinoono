@@ -18,48 +18,22 @@ import org.slf4j.LoggerFactory;
  * @author Lyle T Harris
  */
 @Path(NodeResource.PATH)
-@Singleton
 public class NodeResource {
 
     public static final String PATH = "/node";
 
-    private final String id;
-
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(NodeResource.class);
-
-
-    public NodeResource() {
-        this.id = UUID.randomUUID().toString();
-    }
 
     @Inject
     private ZooKeeperResource zkr;
 
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    public String getIt() {
-        LOG.info("");
-        return id + "\n" + zkr + "\n";
-    }
-
 
     @GET
     @Path("status")
-    @Produces({MediaType.TEXT_PLAIN + ";qs=1"})
-    public String getStatusAsText() {
-        LOG.debug("");
-        return getStatus().getValue().value();
-    }
-
-
-    @GET
-    @Path("status")
-    @Produces({
-        MediaType.APPLICATION_JSON + ";qs=.75",
-        MediaType.APPLICATION_XML + ";qs=.5"
-    })
-    public Status getStatus() {
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    public Status status() {
+        
         Status status = new Status();
         status.setValue(Value.OK);
         status.getMessages().add("Tutto Bene!");

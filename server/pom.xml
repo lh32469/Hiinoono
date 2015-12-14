@@ -41,11 +41,6 @@
             <artifactId>jersey-container-grizzly2-servlet</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.hiinoono</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
             <version>3.4.6</version>
@@ -84,6 +79,23 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <version>0.12.3</version> 
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration> 
+                    <accessExternalSchema>all</accessExternalSchema>                                                   
+                    <extension>true</extension>
+                    <verbose>false</verbose>
                 </configuration>
             </plugin>
             <plugin>

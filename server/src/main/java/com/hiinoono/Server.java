@@ -1,6 +1,6 @@
 package com.hiinoono;
 
-import com.hiinoono.rest.node.NodeApplication;
+import com.hiinoono.rest.API;
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;
 import java.net.URI;
 import javax.ws.rs.ext.RuntimeDelegate;
@@ -35,11 +35,11 @@ public class Server {
 
         Class<HttpHandler> clazz = HttpHandler.class;
 
-        HttpHandler masterApp
-                = delegate.createEndpoint(new NodeApplication(), clazz);
+        HttpHandler api
+                = delegate.createEndpoint(new API(), clazz);
 
-        serverConfig.addHttpHandler(masterApp, "/v1");
-        
+        serverConfig.addHttpHandler(api, "/api");
+
         // Add Hystrix Servlet for Dashboard
         WebappContext context = new WebappContext("Hystrix", "/hystrix");
         context.addServlet("MetricsStreamServlet",
