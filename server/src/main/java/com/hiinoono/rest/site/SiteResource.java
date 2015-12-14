@@ -1,7 +1,6 @@
 package com.hiinoono.rest.site;
 
-import com.hiinoono.common.jaxb.SiteInfo;
-import com.hiinoono.rest.node.NodeResource;
+import com.hiinoono.jaxb.SiteInfo;
 import com.hiinoono.rest.zk.ZooKeeperResource;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -21,8 +20,8 @@ import org.slf4j.LoggerFactory;
 public class SiteResource {
 
     public static final String PATH = "/site";
-    
-      final static private org.slf4j.Logger LOG
+
+    final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(SiteResource.class);
 
     @Inject

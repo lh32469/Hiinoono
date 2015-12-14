@@ -4,11 +4,11 @@
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
            xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
-           xmlns:hn="http://jaxb.common.hiinoono.com"
+           xmlns:hn="http://jaxb.hiinoono.com"
            jaxb:version="2.1"
            jaxb:extensionBindingPrefixes="xjc"
-           xmlns="http://jaxb.common.hiinoono.com"
-           targetNamespace="http://jaxb.common.hiinoono.com"
+           xmlns="http://jaxb.hiinoono.com"
+           targetNamespace="http://jaxb.hiinoono.com"
            elementFormDefault="qualified">
   
    
