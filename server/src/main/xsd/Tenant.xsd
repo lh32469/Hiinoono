@@ -24,31 +24,4 @@
         </xs:sequence>  
     </xs:complexType>
  
-    <xs:element name="Customer">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="name"
-                            minOccurs="1"
-                            type="xs:string" />
-                <xs:element name="email"
-                            minOccurs="1"
-                            type="xs:string" />
-                <xs:element name="description"
-                            minOccurs="1"
-                            type="xs:string" />
-                <xs:element name="password"
-                            minOccurs="1"
-                            type="xs:string" />
-                <xs:element name="uri"
-                            minOccurs="1"
-                            type="xs:string" />    
-                <xs:element name="type"
-                            minOccurs="1"
-                            type="xs:string" />    
-                <xs:element name="dnszone"
-                            minOccurs="1"
-                            type="xs:string" />   
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
 </xs:schema>
