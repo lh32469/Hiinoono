@@ -89,6 +89,20 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
+                <!-- 
+                
+                Changing to higher version causes problems with 
+                simpleType enumarations and type safety treating them
+                as strings in the WADL produced so clients end up
+                with a String field where it should be an enum.  
+                
+                The property: 
+
+                    -Djavax.xml.accessExternalSchema=all
+
+                needs to be added when this project is compiled 
+
+                -->
                 <version>1.6</version>
                 <executions>
                     <execution>
