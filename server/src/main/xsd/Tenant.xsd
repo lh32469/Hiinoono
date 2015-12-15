@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+           xmlns:hn="http://jaxb.hiinoono.com"
+           jaxb:version="2.1"
+           jaxb:extensionBindingPrefixes="xjc"
+           xmlns="http://jaxb.hiinoono.com"
+           targetNamespace="http://jaxb.hiinoono.com"
+           elementFormDefault="qualified">
+  
+    <xs:element name="tenant" type="hn:tenant" />
+     
+    <xs:complexType name="tenant">
+        <xs:sequence>
+            <xs:element name="name"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="email"
+                        maxOccurs="1"
+                        type="xs:string"/>
+        </xs:sequence>  
+    </xs:complexType>
+    
+    
+    <xs:simpleType name="karl">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="OK"/>
+            <xs:enumeration value="WARNING"/>
+            <xs:enumeration value="ERROR"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:element name="Customer">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="name"
+                            minOccurs="1"
+                            type="xs:string" />
+                <xs:element name="email"
+                            minOccurs="1"
+                            type="xs:string" />
+                <xs:element name="description"
+                            minOccurs="1"
+                            type="xs:string" />
+                <xs:element name="password"
+                            minOccurs="1"
+                            type="xs:string" />
+                <xs:element name="uri"
+                            minOccurs="1"
+                            type="xs:string" />    
+                <xs:element name="type"
+                            minOccurs="1"
+                            type="xs:string" />    
+                <xs:element name="dnszone"
+                            minOccurs="1"
+                            type="xs:string" />   
+                <xs:element name="value"
+                            minOccurs="1"
+                            type="karl" />    
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

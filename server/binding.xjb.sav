@@ -1,0 +1,27 @@
+<jxb:bindings
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+    version="2.1">
+ 
+    <jxb:bindings schemaLocation="Status.xsd">
+        <jxb:bindings node="//xs:complexType[@name='status']/xs:sequence/xs:element[@name='messages']">
+            <jxb:property collectionType="java.util.LinkedList"/>
+        </jxb:bindings>
+        <jxb:bindings node="//xs:simpleType[@name='value']/xs:restriction/xs:enumeration[@value='OK']">
+            <jxb:typesafeEnumMember name="OKAY"/>
+        </jxb:bindings>
+        <!--
+         <jxb:bindings node = "//xs:simpleType[@name='value']">
+             <jxb:javaType name="com.hiinoono.enums.Value"/> 
+         </jxb:bindings>
+      
+        <bindings scd="~tns:value">
+            <typesafeEnumClass ref="com.hiinoono.jaxb.Value"/>
+        </bindings>
+          -->
+        <jxb:bindings node="//xs:simpleType[@name='value']">
+            <jxb:typesafeEnumClass name="ValueType" />
+        </jxb:bindings>
+    </jxb:bindings>
+ 
+</jxb:bindings>
