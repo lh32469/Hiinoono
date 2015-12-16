@@ -30,14 +30,13 @@ public class SiteResource {
 
     @GET
     @Path("info")
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public SiteInfo info(@Context UriInfo ui) {
 
         SiteInfo info = new SiteInfo();
         info.setName("HN-1");
         info.setVersion("1.0");
         info.setUri(ui.getAbsolutePath().toString());
-
+        
         return info;
 
     }

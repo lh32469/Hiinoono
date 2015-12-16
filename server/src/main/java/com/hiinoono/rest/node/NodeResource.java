@@ -6,8 +6,6 @@ import com.hiinoono.rest.zk.ZooKeeperResource;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 import org.slf4j.LoggerFactory;
 
 
@@ -29,12 +27,12 @@ public class NodeResource {
 
     @GET
     @Path("status")
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Status status() {
 
         Status status = new Status();
         status.setValue(Value.OK);
         status.getMessages().add("Tutto Bene!");
+        status.getMessages().add("All good...");
         return status;
 
     }
