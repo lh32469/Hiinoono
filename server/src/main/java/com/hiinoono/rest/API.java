@@ -2,6 +2,7 @@ package com.hiinoono.rest;
 
 import com.hiinoono.rest.node.NodeResource;
 import com.hiinoono.rest.site.SiteResource;
+import com.hiinoono.rest.tenant.TenantResource;
 import com.hiinoono.rest.zk.ZooKeeperResource;
 import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.message.MessageProperties;
@@ -17,9 +18,10 @@ import org.glassfish.jersey.server.wadl.WadlFeature;
 public class API extends ResourceConfig {
 
     public API() {
-       
+
         register(SiteResource.class);
         register(NodeResource.class);
+        register(TenantResource.class);
         register(ZooKeeperResource.class);
 
         if (System.getProperty("LOG") != null) {
