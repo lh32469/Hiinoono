@@ -2,6 +2,8 @@ package com.hiinoono;
 
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.SiteInfo;
+import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.jaxb.Value;
 import com.hiinoono.rest.api.model.HClient;
 import java.net.URI;
@@ -59,6 +61,26 @@ public class ClientTest {
         Object text = HClient.site().info().getAs(String.class);
 
         System.out.println("SiteInfo: \n" + text);
+
+        // ============ Tenants ====================== //
+        HClient.Tenant tenantClient
+                = HClient.tenant();
+
+        Tenants tenants = tenantClient.getAsTenants();
+
+        jaxbContext = JAXBContext.newInstance(Tenants.class);
+        marshaller = jaxbContext.createMarshaller();
+
+        qName = new QName("com.hiinoono.jaxb.model", "tenant");
+        JAXBElement<Tenants> tenantJaxb
+                = new JAXBElement<>(qName, Tenants.class, tenants);
+
+        System.out.println("===== Tenant =====\n");
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+        marshaller.setProperty(MarshallerProperties.MEDIA_TYPE, "application/json");
+        marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
+        marshaller.marshal(tenantJaxb, System.out);
+        System.out.println("\n");
 
     }
 
