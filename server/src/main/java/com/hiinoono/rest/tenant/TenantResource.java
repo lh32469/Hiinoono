@@ -2,16 +2,18 @@ package com.hiinoono.rest.tenant;
 
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.Tenants;
-import com.hiinoono.jaxb.User;
+import com.hiinoono.rest.auth.Roles;
 import com.hiinoono.rest.zk.ZooKeeperResource;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
 
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
  * @author Lyle T Harris
  */
 @Path(TenantResource.PATH)
+@PermitAll
 public class TenantResource {
 
     public static final String PATH = "/tenant";
@@ -30,9 +33,13 @@ public class TenantResource {
     @Inject
     private ZooKeeperResource zkr;
 
+    @Context
+    private SecurityContext sc;
+
 
     @GET
     @Path("list")
+    @RolesAllowed({Roles.H_ADMIN})
     public List<Tenant> getTenantsAsList() {
 
         // Clear passwords before sending
@@ -48,8 +55,10 @@ public class TenantResource {
 
 
     @GET
+    @RolesAllowed({"ADMIN", "ORG1", "DEMO"})
     public Tenants getTenants() {
 
+        System.out.println("Principal: " + sc.getUserPrincipal().getName());
         Tenants t = new Tenants();
         t.getTenants().addAll(getTenantsAsList());
         return t;

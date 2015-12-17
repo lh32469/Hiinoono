@@ -24,6 +24,10 @@
             <xs:element name="password"
                         maxOccurs="1"
                         type="xs:string"/>
+            <xs:element name="role"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="xs:string"/>
         </xs:sequence>  
     </xs:complexType>
  

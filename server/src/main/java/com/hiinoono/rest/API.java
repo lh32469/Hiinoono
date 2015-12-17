@@ -1,5 +1,6 @@
 package com.hiinoono.rest;
 
+import com.hiinoono.rest.auth.AuthorizationFilter;
 import com.hiinoono.rest.node.NodeResource;
 import com.hiinoono.rest.site.SiteResource;
 import com.hiinoono.rest.tenant.TenantResource;
@@ -8,6 +9,7 @@ import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.message.MessageProperties;
 import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.server.wadl.WadlFeature;
 
 
@@ -23,6 +25,8 @@ public class API extends ResourceConfig {
         register(NodeResource.class);
         register(TenantResource.class);
         register(ZooKeeperResource.class);
+        register(RolesAllowedDynamicFeature.class);
+        register(AuthorizationFilter.class);
 
         if (System.getProperty("LOG") != null) {
             register(LoggingFilter.class);

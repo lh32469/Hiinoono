@@ -2,6 +2,8 @@ package com.hiinoono;
 
 import com.hiinoono.rest.API;
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import java.net.URI;
 import javax.ws.rs.ext.RuntimeDelegate;
 import org.glassfish.grizzly.http.server.HttpHandler;
@@ -9,6 +11,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.server.ContainerFactory;
 
 
 /**
@@ -37,7 +40,7 @@ public class Server {
 
         HttpHandler api
                 = delegate.createEndpoint(new API(), clazz);
-
+        
         serverConfig.addHttpHandler(api, "/api");
 
         // Add Hystrix Servlet for Dashboard
@@ -45,7 +48,7 @@ public class Server {
         context.addServlet("MetricsStreamServlet",
                 HystrixMetricsStreamServlet.class);
         context.deploy(server);
-
+        
         return server;
     }
 

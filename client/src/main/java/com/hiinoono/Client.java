@@ -1,21 +1,10 @@
 package com.hiinoono;
 
 import com.hiinoono.rest.api.model.HClient;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Scanner;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.WebApplicationException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -62,6 +51,10 @@ public class Client {
     private static final String HELP = "help";
 
     private static final String CLIENT = "HiinoonoClient";
+
+    private static final String USER = "HIINOONO_USER";
+
+    private static final String PASS = "HIINOONO_PASSWORD";
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(Client.class);
@@ -113,10 +106,22 @@ public class Client {
             System.setProperty("http.proxyPort", port);
         }
 
+        String user = System.getenv(USER);
+        if (user == null) {
+            LOG.error(USER + " environment variable not set");
+            System.exit(1);
+        }
+
+        String pass = System.getenv(PASS);
+        if (pass == null) {
+            LOG.error(PASS + " environment variable not set");
+            System.exit(1);
+        }
+
         LOG.info("Connecting to: " + svc);
 
         HttpAuthenticationFeature authentication
-                = HttpAuthenticationFeature.basic("adminn", "password");
+                = HttpAuthenticationFeature.basic(user, pass);
 
         javax.ws.rs.client.Client c = HClient.createClient();
 
@@ -129,29 +134,41 @@ public class Client {
         if (cmd.hasOption(LOGGING)) {
             c.register(LoggingFilter.class);
         }
+        try {
 
-        if (cmd.hasOption(LIST)) {
-            String type = cmd.getOptionValue(LIST);
-            if (type.equalsIgnoreCase(TENANTS)) {
-                HClient.Tenant t = HClient.tenant(c, URI.create(svc));
-                System.out.println(t.getAs(String.class) + "\n");
-            } else {
-                LOG.error("Unrecognized --" + LIST + " argument provided\n");
-                HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp(CLIENT, options);
-                System.exit(1);
+            if (cmd.hasOption(LIST)) {
+                list(cmd, c, svc);
             }
+
+        } catch (WebApplicationException ex) {
+            LOG.error(ex.getLocalizedMessage());
+            LOG.error(ex.getResponse().readEntity(String.class));
         }
 
+    }
+
+
+    private static void list(
+            CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String type = cmd.getOptionValue(LIST);
+        if (type.equalsIgnoreCase(TENANTS)) {
+            HClient.Tenant t = HClient.tenant(c, URI.create(svc));
+            System.out.println(t.getAs(String.class) + "\n");
+        } else {
+            LOG.error("Unrecognized --" + LIST + " argument provided\n");
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(CLIENT, getOptions());
+            System.exit(1);
+        }
     }
 
 
     static final Options getOptions() {
 
         final Options options = new Options();
-
-        options.addOption("s", SERVICE, true,
-                "Hiinoono Service API URL.");
 
         options.addOption("k", KEY, true,
                 "Hiinoono Service Key.");
@@ -180,6 +197,14 @@ public class Client {
                 .desc("HTTP Proxy (if needed).")
                 .build();
         options.addOption(proxy);
+
+        Option service = Option.builder("s")
+                .hasArg()
+                .argName("http://...")
+                .longOpt(SERVICE)
+                .desc("Hiinoono Service API URL.")
+                .build();
+        options.addOption(service);
 
         Option restore = Option.builder("r")
                 .hasArg()
