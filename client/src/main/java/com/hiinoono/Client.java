@@ -29,23 +29,11 @@ import org.glassfish.jersey.message.GZipEncoder;
  */
 public class Client {
 
-    private static final String EXCLUDE = "exclude";
-
-    private static final String INCLUDE = "include";
-
-    private static final String RESTORE = "restore";
-
     private static final String LIST = "list";
 
     private static final String LOGGING = "log";
 
     private static final String SERVICE = "service";
-
-    private static final String KEY = "key";
-
-    private static final String GENKEY = "genkey";
-
-    private static final String DIRECTORY = "directory";
 
     private static final String TENANTS = "tenants";
 
@@ -97,13 +85,6 @@ public class Client {
             LOG.info("Version: " + props.getProperty(VERSION)
                     + "  (" + props.getProperty("date") + ")");
             System.exit(0);
-        }
-
-        if (!cmd.hasOption(KEY)) {
-            LOG.error("No key provided");
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp(CLIENT, options);
-            System.exit(1);
         }
 
         String svc = "http://localhost:8080/api";
@@ -176,6 +157,9 @@ public class Client {
     }
 
 
+    /**
+     * Implements the --list option functionality.
+     */
     private static void list(
             CommandLine cmd,
             javax.ws.rs.client.Client c,
@@ -198,9 +182,6 @@ public class Client {
 
         final Options options = new Options();
 
-        options.addOption("k", KEY, true,
-                "Hiinoono Service Key.");
-
         options.addOption("h", HELP, false,
                 "Display this message.");
 
@@ -212,14 +193,6 @@ public class Client {
 
         options.addOption("L", LOGGING, false,
                 "Enable org.glassfish.jersey.filter.LoggingFilter");
-
-        Option directories = Option.builder("d")
-                .hasArgs()
-                .argName(DIRECTORY)
-                .longOpt(DIRECTORY)
-                .desc("Directory to backup.  Can occur more than once.")
-                .build();
-        options.addOption(directories);
 
         Option proxy = Option.builder("p")
                 .hasArg()
@@ -244,16 +217,6 @@ public class Client {
                 .desc("Add a new Tenant.")
                 .build();
         options.addOption(addTenant);
-
-        Option restore = Option.builder("r")
-                .hasArg()
-                .optionalArg(true)
-                .argName("version")
-                .longOpt(RESTORE)
-                .desc("Restore the version of directory(ies) listed using the"
-                        + " current directory as the new parent.")
-                .build();
-        options.addOption(restore);
 
         return options;
     }
