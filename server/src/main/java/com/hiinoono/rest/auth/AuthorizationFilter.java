@@ -79,6 +79,10 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         user.setName(username);
         user.getRoles().add("DEMO");
         
+        if (Roles.H_ADMIN.equals(username)) {
+            user.getRoles().add(Roles.H_ADMIN);
+        }
+
         ctxt.setSecurityContext(new Authorizer(user));
 
     }
