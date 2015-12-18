@@ -23,10 +23,7 @@ import org.glassfish.jersey.server.ContainerRequest;
 @Priority(Priorities.AUTHENTICATION - 100)
 public class AuthorizationFilter implements ContainerRequestFilter {
 
-    static final Response BAD_CREDENTIALS
-            = Response.status(Status.UNAUTHORIZED)
-            .entity("Incorrect credentials")
-            .build();
+    static final String BAD_CREDENTIALS = "Incorrect credentials\n";
 
     @Inject
     private ZooKeeperResource zkr;
@@ -36,49 +33,62 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext ctxt) throws IOException {
 
         String path = ctxt.getUriInfo().getPath();
-        System.out.println("Path: " + path);
 
         if (path.startsWith("application.wadl")) {
             // Free access to WADL and schemas
             return;
         }
 
-        String authentication
+        String authorization
                 = ctxt.getHeaderString(ContainerRequest.AUTHORIZATION);
-        System.out.println(ContainerRequest.AUTHORIZATION
-                + ": " + authentication);
 
-        authentication = authentication.substring("Basic ".length());
-        
-        // Possibly just go to ZooKeeper and see if this string exists?
-        
+        if (authorization == null) {
+            // No authorization.
+            ctxt.abortWith(Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(BAD_CREDENTIALS)
+                    .build());
+            return;
+        }
+
+        authorization = authorization.substring("Basic ".length());
+
         String[] values = new String(Base64.getDecoder()
-                .decode(authentication)).split(":");
+                .decode(authorization)).split(":");
 
         if (values.length < 2) {
-            throw new WebApplicationException(BAD_CREDENTIALS);
             // "Invalid syntax for username and password"
+            ctxt.abortWith(Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(BAD_CREDENTIALS)
+                    .build());
+            return;
         }
 
         String username = values[0];
         String password = values[1];
         if ((username == null) || (password == null)) {
-            throw new WebApplicationException(BAD_CREDENTIALS);
             // "Missing username or password"
+            ctxt.abortWith(Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(BAD_CREDENTIALS)
+                    .build());
+            return;
         }
-
-        System.out.println("User: " + username);
-        System.out.println("Password: " + password);
 
         // Need to pull this out of ZK
         if (!"welcome1".equals(password)) {
-            throw new WebApplicationException(BAD_CREDENTIALS);
+            ctxt.abortWith(Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(BAD_CREDENTIALS)
+                    .build());
+            return;
         }
-      
+
         User user = new User();
         user.setName(username);
         user.getRoles().add("DEMO");
-        
+
         if (Roles.H_ADMIN.equals(username)) {
             user.getRoles().add(Roles.H_ADMIN);
         }
