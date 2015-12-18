@@ -133,6 +133,10 @@
                         <manifest>
                             <mainClass>${main.class}</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <version>${project.version}</version>
+                            <date>${maven.build.timestamp}</date>
+                        </manifestEntries>
                     </archive>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>

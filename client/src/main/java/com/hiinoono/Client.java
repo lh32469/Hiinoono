@@ -3,6 +3,9 @@ package com.hiinoono;
 import com.hiinoono.rest.api.model.HClient;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Properties;
 import java.util.Scanner;
 import javax.ws.rs.WebApplicationException;
 import org.apache.commons.cli.CommandLine;
@@ -50,6 +53,8 @@ public class Client {
 
     private static final String HELP = "help";
 
+    private static final String VERSION = "version";
+
     private static final String CLIENT = "HiinoonoClient";
 
     private static final String USER = "HIINOONO_USER";
@@ -69,7 +74,29 @@ public class Client {
         if (cmd.hasOption(HELP) || cmd.getOptions().length == 0) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp(CLIENT, options);
-            System.exit(1);
+            System.exit(0);
+        }
+
+        if (cmd.hasOption(VERSION)) {
+
+            Properties props = new Properties();
+
+            Enumeration<URL> manifest
+                    = ClassLoader.getSystemResources("META-INF/MANIFEST.MF");
+
+            while (manifest.hasMoreElements()) {
+                URL nextElement = manifest.nextElement();
+                // System.out.println("Manifest: " + nextElement.getFile());
+                if (nextElement.getFile().contains("Hc.jar")) {
+                    props.load(nextElement.openStream());
+                    break;
+                }
+            }
+
+            //  System.out.println("Props: " + prop);
+            LOG.info("Version: " + props.getProperty(VERSION)
+                    + "  (" + props.getProperty("date") + ")");
+            System.exit(0);
         }
 
         if (!cmd.hasOption(KEY)) {
@@ -134,6 +161,7 @@ public class Client {
         if (cmd.hasOption(LOGGING)) {
             c.register(LoggingFilter.class);
         }
+
         try {
 
             if (cmd.hasOption(LIST)) {
@@ -176,6 +204,9 @@ public class Client {
         options.addOption("h", HELP, false,
                 "Display this message.");
 
+        options.addOption("v", VERSION, false,
+                "Display version.");
+
         options.addOption("l", LIST, true,
                 "List tenants, nodes, instances ");
 
@@ -205,6 +236,14 @@ public class Client {
                 .desc("Hiinoono Service API URL.")
                 .build();
         options.addOption(service);
+
+        Option addTenant = Option.builder("a")
+                .hasArgs()
+                .argName("name")
+                .longOpt("addTenant")
+                .desc("Add a new Tenant.")
+                .build();
+        options.addOption(addTenant);
 
         Option restore = Option.builder("r")
                 .hasArg()
