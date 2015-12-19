@@ -1,5 +1,8 @@
 package com.hiinoono;
 
+import com.hiinoono.jaxb.SiteInfo;
+import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.rest.api.model.HClient;
 import java.io.IOException;
 import java.net.URI;
@@ -7,11 +10,13 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Scanner;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -57,7 +62,19 @@ public class Client {
 
         Options options = getOptions();
         CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (MissingArgumentException ex) {
+            System.out.println("");
+            LOG.error(ex.getLocalizedMessage());
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(CLIENT, options);
+            System.exit(1);
+        }
+
+        LOG.info("Version: " + getVersion());
 
         if (cmd.hasOption(HELP) || cmd.getOptions().length == 0) {
             HelpFormatter formatter = new HelpFormatter();
@@ -66,24 +83,7 @@ public class Client {
         }
 
         if (cmd.hasOption(VERSION)) {
-
-            Properties props = new Properties();
-
-            Enumeration<URL> manifest
-                    = ClassLoader.getSystemResources("META-INF/MANIFEST.MF");
-
-            while (manifest.hasMoreElements()) {
-                URL nextElement = manifest.nextElement();
-                // System.out.println("Manifest: " + nextElement.getFile());
-                if (nextElement.getFile().contains("Hc.jar")) {
-                    props.load(nextElement.openStream());
-                    break;
-                }
-            }
-
-            //  System.out.println("Props: " + prop);
-            LOG.info("Version: " + props.getProperty(VERSION)
-                    + "  (" + props.getProperty("date") + ")");
+            // Version always printed.
             System.exit(0);
         }
 
@@ -144,6 +144,22 @@ public class Client {
         }
 
         try {
+            // Sanity test service URL
+            HClient.Site site = HClient.site(c, URI.create(svc));
+            SiteInfo info = site.info().getAsSiteInfo();
+            LOG.info("Connected to:  " + info.getName()
+                    + ", Version: " + info.getVersion());
+        } catch (WebApplicationException ex) {
+            if (ex.getResponse().getStatus() == 404) {
+                LOG.error("Invalid Hiinoono Service API URL.");
+            }
+            return;
+        } catch (ProcessingException ex) {
+            LOG.error(ex.getLocalizedMessage());
+            return;
+        }
+
+        try {
 
             if (cmd.hasOption(LIST)) {
                 list(cmd, c, svc);
@@ -152,8 +168,30 @@ public class Client {
         } catch (WebApplicationException ex) {
             LOG.error(ex.getLocalizedMessage());
             LOG.error(ex.getResponse().readEntity(String.class));
+        } catch (ProcessingException ex) {
+            LOG.error("Invalid Hiinoono Service API URL.");
+            LOG.error(ex.getLocalizedMessage());
         }
 
+    }
+
+
+    private static String getVersion() throws IOException {
+        Properties props = new Properties();
+
+        Enumeration<URL> manifest
+                = ClassLoader.getSystemResources("META-INF/MANIFEST.MF");
+
+        while (manifest.hasMoreElements()) {
+            URL nextElement = manifest.nextElement();
+            if (nextElement.getFile().contains("Hc.jar")) {
+                props.load(nextElement.openStream());
+                break;
+            }
+        }
+
+        return props.getProperty(VERSION)
+                + " (" + props.getProperty("date") + ")";
     }
 
 
@@ -168,7 +206,12 @@ public class Client {
         String type = cmd.getOptionValue(LIST);
         if (type.equalsIgnoreCase(TENANTS)) {
             HClient.Tenant t = HClient.tenant(c, URI.create(svc));
-            System.out.println(t.getAs(String.class) + "\n");
+            Tenants tenants = t.getAsTenants();
+            // TODO: Better formatting
+            for (Tenant tenant : tenants.getTenant()) {
+                System.out.println(tenant.getName());
+            }
+            // System.out.println(t.getAs(String.class) + "\n");
         } else {
             LOG.error("Unrecognized --" + LIST + " argument provided\n");
             HelpFormatter formatter = new HelpFormatter();

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  
+    <appender name="STDOUT" 
+              class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %msg%n</pattern>
+            <immediateFlush>true</immediateFlush>
+        </encoder> 
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+    
+    <logger name="org.glassfish.jersey.filter.LoggingFilter" 
+            level="INFO">
+        <appender-ref ref="STDOUT" />
+    </logger>
+      
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
