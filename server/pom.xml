@@ -135,7 +135,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.3</version>
                 <configuration>
-                    <finalName>Hs</finalName>
+                    <finalName>${assembly.name}</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
@@ -143,6 +143,11 @@
                         <manifest>
                             <mainClass>${main.class}</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <assembly>${assembly.name}</assembly>
+                            <version>${project.version}</version>
+                            <date>${maven.build.timestamp}</date>
+                        </manifestEntries>
                     </archive>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
@@ -151,6 +156,7 @@
     </build>
 
     <properties>
+        <assembly.name>Hs</assembly.name>
         <jersey.version>2.19</jersey.version>
         <main.class>com.hiinoono.Server</main.class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
