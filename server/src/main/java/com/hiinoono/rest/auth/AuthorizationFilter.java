@@ -42,10 +42,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
         if (authorization == null) {
             // No authorization.
-            ctxt.abortWith(Response
-                    .status(Response.Status.UNAUTHORIZED)
-                    .entity(BAD_CREDENTIALS)
-                    .build());
+            abort(ctxt);
             return;
         }
 
@@ -56,10 +53,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
         if (values.length < 2) {
             // "Invalid syntax for username and password"
-            ctxt.abortWith(Response
-                    .status(Response.Status.UNAUTHORIZED)
-                    .entity(BAD_CREDENTIALS)
-                    .build());
+            abort(ctxt);
             return;
         }
 
@@ -67,19 +61,13 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         String password = values[1];
         if ((username == null) || (password == null)) {
             // "Missing username or password"
-            ctxt.abortWith(Response
-                    .status(Response.Status.UNAUTHORIZED)
-                    .entity(BAD_CREDENTIALS)
-                    .build());
+            abort(ctxt);
             return;
         }
 
-        // Need to pull this out of ZK
+        // Need to pull this out of PersistenceManager
         if (!"welcome1".equals(password)) {
-            ctxt.abortWith(Response
-                    .status(Response.Status.UNAUTHORIZED)
-                    .entity(BAD_CREDENTIALS)
-                    .build());
+            abort(ctxt);
             return;
         }
 
@@ -93,6 +81,14 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
         ctxt.setSecurityContext(new Authorizer(user));
 
+    }
+
+
+    void abort(ContainerRequestContext ctxt) {
+        ctxt.abortWith(Response
+                .status(Response.Status.UNAUTHORIZED)
+                .entity(BAD_CREDENTIALS)
+                .build());
     }
 
 
