@@ -14,6 +14,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.namespace.QName;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 
 /**
@@ -25,6 +26,11 @@ public class ClientTest {
     public static void main(String[] args) throws JAXBException {
 
         Client c = HClient.createClient();
+
+        HttpAuthenticationFeature authentication
+                = HttpAuthenticationFeature.basic("Tester", "welcome1");
+
+        c.register(authentication);
 
         HClient.Node node
                 = HClient.node(c, URI.create("http://localhost:8080/api"));

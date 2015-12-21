@@ -2,7 +2,8 @@ package com.hiinoono.rest.node;
 
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.Value;
-import com.hiinoono.rest.zk.ZooKeeperResource;
+import com.hiinoono.persistence.PersistenceManager;
+import com.hiinoono.persistence.ZooKeeperPersistenceManager;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -22,7 +23,7 @@ public class NodeResource {
             = LoggerFactory.getLogger(NodeResource.class);
 
     @Inject
-    private ZooKeeperResource zkr;
+    private PersistenceManager pm;
 
 
     @GET

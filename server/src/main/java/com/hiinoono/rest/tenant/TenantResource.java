@@ -2,8 +2,9 @@ package com.hiinoono.rest.tenant;
 
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.Tenants;
+import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.Roles;
-import com.hiinoono.rest.zk.ZooKeeperResource;
+import com.hiinoono.persistence.ZooKeeperPersistenceManager;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
@@ -31,7 +32,7 @@ public class TenantResource {
             = LoggerFactory.getLogger(TenantResource.class);
 
     @Inject
-    private ZooKeeperResource zkr;
+    private PersistenceManager pm;
 
     @Context
     private SecurityContext sc;
@@ -43,7 +44,7 @@ public class TenantResource {
     public List<Tenant> getTenantsAsList() {
 
         // Clear passwords before sending
-        return zkr.getTenants().map((tenant) -> {
+        return pm.getTenants().map((tenant) -> {
             tenant.getAdmin().setPassword("***");
             tenant.getUsers().stream().forEach((user) -> {
                 user.setPassword("***");
@@ -58,6 +59,7 @@ public class TenantResource {
     @RolesAllowed({"ADMIN", "ORG1", "DEMO"})
     public Tenants getTenants() {
 
+        System.out.println("PM: " + pm);
         System.out.println("Principal: " + sc.getUserPrincipal().getName());
         Tenants t = new Tenants();
         t.getTenants().addAll(getTenantsAsList());
@@ -69,7 +71,7 @@ public class TenantResource {
     @GET
     @Path("{name}")
     public Tenant getTenant(@PathParam("name") String name) {
-        return zkr.getTenantByName(name);
+        return pm.getTenantByName(name);
     }
 
 

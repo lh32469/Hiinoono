@@ -1,7 +1,12 @@
 package com.hiinoono.rest.site;
 
 import com.hiinoono.jaxb.SiteInfo;
-import com.hiinoono.rest.zk.ZooKeeperResource;
+import com.hiinoono.persistence.PersistenceManager;
+import com.hiinoono.persistence.ZooKeeperPersistenceManager;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Properties;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -25,7 +30,7 @@ public class SiteResource {
             = LoggerFactory.getLogger(SiteResource.class);
 
     @Inject
-    private ZooKeeperResource zkr;
+    private PersistenceManager pm;
 
 
     @GET
@@ -34,11 +39,38 @@ public class SiteResource {
 
         SiteInfo info = new SiteInfo();
         info.setName("HN-1");
-        info.setVersion("1.0");
+        String version = "Unknown";
+
+        try {
+            version = getVersion();
+        } catch (IOException ex) {
+            LOG.error(ex.getLocalizedMessage());
+        }
+
+        info.setVersion(version);
         info.setUri(ui.getAbsolutePath().toString());
-        
+
         return info;
 
+    }
+
+
+    String getVersion() throws IOException {
+        Properties props = new Properties();
+
+        Enumeration<URL> manifest
+                = ClassLoader.getSystemResources("META-INF/MANIFEST.MF");
+
+        while (manifest.hasMoreElements()) {
+            URL nextElement = manifest.nextElement();
+            if (nextElement.getFile().contains("Hs.jar")) {
+                props.load(nextElement.openStream());
+                break;
+            }
+        }
+
+        return props.getProperty("version")
+                + " (" + props.getProperty("date") + ")";
     }
 
 

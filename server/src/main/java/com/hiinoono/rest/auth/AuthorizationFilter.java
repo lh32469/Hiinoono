@@ -1,18 +1,16 @@
 package com.hiinoono.rest.auth;
 
 import com.hiinoono.jaxb.User;
-import com.hiinoono.rest.zk.ZooKeeperResource;
+import com.hiinoono.persistence.PersistenceManager;
 import java.io.IOException;
 import java.util.Base64;
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.ws.rs.Priorities;
 
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.ContainerRequest;
 
 
@@ -23,10 +21,10 @@ import org.glassfish.jersey.server.ContainerRequest;
 @Priority(Priorities.AUTHENTICATION - 100)
 public class AuthorizationFilter implements ContainerRequestFilter {
 
-    static final String BAD_CREDENTIALS = "Incorrect credentials\n";
+    private static final String BAD_CREDENTIALS = "Incorrect credentials\n";
 
     @Inject
-    private ZooKeeperResource zkr;
+    private PersistenceManager pm;
 
 
     @Override
