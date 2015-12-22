@@ -1,7 +1,6 @@
 package com.hiinoono.rest.auth;
 
 import com.hiinoono.jaxb.User;
-import com.hiinoono.rest.tenant.TenantResource;
 import java.security.Principal;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,8 @@ public class Authorizer implements SecurityContext {
     @Override
     public boolean isUserInRole(String role) {
         boolean result = user.getRoles().contains(role);
-        LOG.info(user.getName() + " ? " + role + " -> " + result);
+        LOG.info(user.getTenant() + "/" + user.getName()
+                + " ? " + role + " -> " + result);
         return result;
     }
 
