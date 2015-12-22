@@ -1,5 +1,7 @@
 package com.hiinoono;
 
+import com.hiinoono.jaxb.Node;
+import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.Tenants;
@@ -41,6 +43,8 @@ public class Client {
     private static final String SERVICE = "service";
 
     private static final String TENANTS = "tenants";
+
+    private static final String NODES = "nodes";
 
     private static final String PROXY = "proxy";
 
@@ -152,6 +156,9 @@ public class Client {
         } catch (WebApplicationException ex) {
             if (ex.getResponse().getStatus() == 404) {
                 LOG.error("Invalid Hiinoono Service API URL.");
+            } else {
+                LOG.error(ex.getLocalizedMessage());
+                LOG.error(ex.getResponse().readEntity(String.class));
             }
             return;
         } catch (ProcessingException ex) {
@@ -208,10 +215,22 @@ public class Client {
             HClient.Tenant t = HClient.tenant(c, URI.create(svc));
             Tenants tenants = t.getAsTenants();
             // TODO: Better formatting
+            System.out.println("");
             for (Tenant tenant : tenants.getTenant()) {
-                System.out.println(tenant.getName());
+                System.out.printf("%-15s%-20s\n",
+                        tenant.getName(), tenant.getAdmin().getEmail());
             }
-            // System.out.println(t.getAs(String.class) + "\n");
+            System.out.println("");
+
+        } else if (type.equalsIgnoreCase(NODES)) {
+            HClient.Node t = HClient.node(c, URI.create(svc));
+            Nodes nodes = t.getAsNodes();
+            System.out.println("");
+            for (Node node : nodes.getNode()) {
+                System.out.println(node.getId() + "  " + node.getHostname());
+            }
+            System.out.println("");
+
         } else {
             LOG.error("Unrecognized --" + LIST + " argument provided\n");
             HelpFormatter formatter = new HelpFormatter();

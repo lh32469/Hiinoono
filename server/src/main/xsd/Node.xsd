@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+           xmlns:hn="http://jaxb.hiinoono.com"
+           jaxb:version="2.1"
+           jaxb:extensionBindingPrefixes="xjc"
+           xmlns="http://jaxb.hiinoono.com"
+           targetNamespace="http://jaxb.hiinoono.com"
+           elementFormDefault="qualified">
+  
+    <xs:element name="tenant" type="hn:tenant" />
+   
+    <xs:complexType name="tenant">
+        <xs:sequence>
+            <xs:element name="name"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="admin"
+                        maxOccurs="1"
+                        type="user"/>
+            <xs:element name="user"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="user"/>
+        </xs:sequence>  
+    </xs:complexType>
+    
+    <!-- 
+    Wrapper element since Jersey default WADL generator only generates 
+    a Tenant for a @GET method that returns List<Tenant>
+    -->
+    <xs:element name="tenants" type="tenants" />
+    
+    <xs:complexType name="tenants">
+        <xs:sequence>
+            <xs:element name="tenant"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="tenant"/>
+        </xs:sequence>  
+    </xs:complexType>
+     
+ 
+</xs:schema>
