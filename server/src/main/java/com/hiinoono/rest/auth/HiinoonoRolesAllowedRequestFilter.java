@@ -1,8 +1,6 @@
 package com.hiinoono.rest.auth;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -11,10 +9,15 @@ import javax.ws.rs.core.SecurityContext;
 
 
 /**
+ * Checks the HiinoonoRolesAllowed on the Method being called against the
+ * current Roles of the User and throws a Status.FORBIDDEN
+ * WebApplicationException which includes the message value from the
+ * HiinoonoRolesAllowed annotation for the Method being called.
  *
  * @author Lyle T Harris
  */
-public class HiinoonoRolesAllowedRequestFilter implements ContainerRequestFilter {
+public class HiinoonoRolesAllowedRequestFilter implements
+        ContainerRequestFilter {
 
     private final String[] rolesAllowed;
 
@@ -22,15 +25,8 @@ public class HiinoonoRolesAllowedRequestFilter implements ContainerRequestFilter
 
 
     HiinoonoRolesAllowedRequestFilter(HiinoonoRolesAllowed ra) {
-        String[] values = ra.roles();
-        for (int i = 0; i < values.length; i++) {
-            String value = values[i];
-            System.out.println("HiinoonoRolesAllowedRequestFilter  Value: " + value);
-        }
-
         this.rolesAllowed = ra.roles();
         this.message = ra.message();
-        System.out.println("HiinoonoRolesAllowedRequestFilter: " + ra.message());
     }
 
 
