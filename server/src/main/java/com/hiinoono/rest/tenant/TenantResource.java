@@ -3,18 +3,17 @@ package com.hiinoono.rest.tenant;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.persistence.PersistenceManager;
+import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,8 @@ public class TenantResource {
 
     @GET
     @Path("list")
-    @RolesAllowed({Roles.H_ADMIN})
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
+            message = "You are not permitted to list tenants.")
     public List<Tenant> getTenantsAsList() {
 
         // Clear passwords before sending
@@ -57,7 +57,8 @@ public class TenantResource {
 
 
     @GET
-    @RolesAllowed({Roles.H_ADMIN})
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
+            message = "You are not permitted to list tenants.")
     public Tenants getTenants() {
 
         System.out.println("PM: " + pm);
@@ -71,28 +72,25 @@ public class TenantResource {
 
     @GET
     @Path("{name}")
-    @RolesAllowed({Roles.H_ADMIN, Roles.T_ADMIN})
     public Tenant getTenant(@PathParam("name") String name) {
+        LOG.debug(name);
 
         // If User is in Tenant Admin Role make sure Tenant names match
         if (!sc.isUserInRole(Roles.H_ADMIN)
                 && !sc.isUserInRole(name + "/admin")) {
 
-            final String message = "You are not authorized to view Tenant: "
-                    + name + "\n";
-
-            throw new WebApplicationException(Response
-                    .status(Response.Status.UNAUTHORIZED)
-                    .entity(message)
-                    .build());
+            throw new ForbiddenException("You are not permitted to"
+                    + " view Tenant: " + name);
         }
 
         Tenant t = pm.getTenantByName(name);
-        
-        t.getAdmin().setPassword("***");
-        t.getUsers().stream().forEach((user) -> {
-            user.setPassword("***");
-        });
+
+        if (t != null) {
+            t.getAdmin().setPassword("***");
+            t.getUsers().stream().forEach((user) -> {
+                user.setPassword("***");
+            });
+        }
 
         return t;
     }

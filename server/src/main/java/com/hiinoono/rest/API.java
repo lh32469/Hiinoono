@@ -1,14 +1,15 @@
 package com.hiinoono.rest;
 
+import com.hiinoono.rest.exceptions.HiinoonoExceptionMapper;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.persistence.UnitTestPersistenceManager;
 import com.hiinoono.rest.auth.AuthorizationFilter;
+import com.hiinoono.rest.auth.HiinoonoRolesFeature;
+import com.hiinoono.rest.exceptions.ClientErrorExceptionMapper;
+import com.hiinoono.rest.exceptions.DefaultExceptionMapper;
 import com.hiinoono.rest.node.NodeResource;
 import com.hiinoono.rest.site.SiteResource;
 import com.hiinoono.rest.tenant.TenantResource;
-import com.hiinoono.persistence.ZooKeeperPersistenceManager;
-import java.io.IOException;
-import org.apache.zookeeper.KeeperException;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.message.MessageProperties;
@@ -29,8 +30,14 @@ public class API extends ResourceConfig {
         register(SiteResource.class);
         register(NodeResource.class);
         register(TenantResource.class);
-        register(RolesAllowedDynamicFeature.class);
+        //register(RolesAllowedDynamicFeature.class);
+        register(HiinoonoRolesFeature.class);
         register(AuthorizationFilter.class);
+
+        // Exception Mappers
+        //register(HiinoonoExceptionMapper.class);
+        //register(DefaultExceptionMapper.class);
+        register(ClientErrorExceptionMapper.class);
 
         if (System.getProperty("LOG") != null) {
             register(LoggingFilter.class);
