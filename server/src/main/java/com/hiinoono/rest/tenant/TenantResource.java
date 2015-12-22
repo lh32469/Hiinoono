@@ -4,7 +4,6 @@ import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.Roles;
-import com.hiinoono.persistence.ZooKeeperPersistenceManager;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
@@ -13,7 +12,9 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public class TenantResource {
 
 
     @GET
-    @RolesAllowed({"ADMIN", "ORG1", "DEMO"})
+    @RolesAllowed({Roles.H_ADMIN})
     public Tenants getTenants() {
 
         System.out.println("PM: " + pm);
@@ -70,8 +71,30 @@ public class TenantResource {
 
     @GET
     @Path("{name}")
+    @RolesAllowed({Roles.H_ADMIN, Roles.T_ADMIN})
     public Tenant getTenant(@PathParam("name") String name) {
-        return pm.getTenantByName(name);
+
+        // If User is in Tenant Admin Role make sure Tenant names match
+        if (!sc.isUserInRole(Roles.H_ADMIN)
+                && !sc.isUserInRole(name + "/admin")) {
+
+            final String message = "You are not authorized to view Tenant: "
+                    + name + "\n";
+
+            throw new WebApplicationException(Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity(message)
+                    .build());
+        }
+
+        Tenant t = pm.getTenantByName(name);
+        
+        t.getAdmin().setPassword("***");
+        t.getUsers().stream().forEach((user) -> {
+            user.setPassword("***");
+        });
+
+        return t;
     }
 
 

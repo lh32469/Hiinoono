@@ -1,9 +1,12 @@
 package com.hiinoono.rest.node;
 
+import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.Value;
 import com.hiinoono.persistence.PersistenceManager;
-import com.hiinoono.persistence.ZooKeeperPersistenceManager;
+import com.hiinoono.rest.auth.Roles;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -36,6 +39,15 @@ public class NodeResource {
         status.getMessages().add("All good...");
         return status;
 
+    }
+
+
+    @GET
+    @RolesAllowed({Roles.H_ADMIN})
+    public Nodes getNodes() {
+        Nodes nodes = new Nodes();
+        nodes.getNodes().addAll(pm.getNodes().collect(Collectors.toList()));
+        return nodes;
     }
 
 

@@ -11,35 +11,35 @@
            targetNamespace="http://jaxb.hiinoono.com"
            elementFormDefault="qualified">
   
-    <xs:element name="tenant" type="hn:tenant" />
+    <xs:element name="node" type="node" />
    
-    <xs:complexType name="tenant">
+    <xs:complexType name="node">
         <xs:sequence>
-            <xs:element name="name"
+            <xs:element name="hostname"
                         maxOccurs="1"
                         type="xs:string"/>
-            <xs:element name="admin"
+            <xs:element name="id"
                         maxOccurs="1"
-                        type="user"/>
-            <xs:element name="user"
+                        type="xs:string"/>
+            <xs:element name="status"
                         minOccurs="0"
-                        maxOccurs="unbounded"
-                        type="user"/>
+                        maxOccurs="1"
+                        type="status"/>
         </xs:sequence>  
     </xs:complexType>
     
     <!-- 
     Wrapper element since Jersey default WADL generator only generates 
-    a Tenant for a @GET method that returns List<Tenant>
+    a Node for a @GET method that returns List<Node>
     -->
-    <xs:element name="tenants" type="tenants" />
+    <xs:element name="nodes" type="nodes" />
     
-    <xs:complexType name="tenants">
+    <xs:complexType name="nodes">
         <xs:sequence>
-            <xs:element name="tenant"
+            <xs:element name="node"
                         minOccurs="0"
                         maxOccurs="unbounded"
-                        type="tenant"/>
+                        type="node"/>
         </xs:sequence>  
     </xs:complexType>
      
