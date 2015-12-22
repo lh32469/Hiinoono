@@ -3,7 +3,13 @@ package com.hiinoono.rest.auth;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.persistence.PersistenceManager;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.ws.rs.Priorities;
@@ -12,6 +18,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.ContainerRequest;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -22,6 +29,9 @@ import org.glassfish.jersey.server.ContainerRequest;
 public class AuthorizationFilter implements ContainerRequestFilter {
 
     private static final String BAD_CREDENTIALS = "Incorrect credentials\n";
+
+    final static private org.slf4j.Logger LOG
+            = LoggerFactory.getLogger(AuthorizationFilter.class);
 
     @Inject
     private PersistenceManager pm;
@@ -57,27 +67,55 @@ public class AuthorizationFilter implements ContainerRequestFilter {
             return;
         }
 
-        String username = values[0];
+        String login = values[0];
         String password = values[1];
-        if ((username == null) || (password == null)) {
-            // "Missing username or password"
+        if ((login == null) || (password == null)) {
+            LOG.info("Missing login or password");
+            abort(ctxt);
+            return;
+        }
+        if (login.startsWith("/")) {
+            login = login.replaceFirst("/", "");
+        }
+
+        if (login.endsWith("/")) {
+            login = login.substring(0, login.length() - 1);
+        }
+
+        values = login.split("/");
+        if (values.length < 2) {
+            LOG.info("Invalid syntax for login:  " + login);
             abort(ctxt);
             return;
         }
 
-        // Need to pull this out of PersistenceManager
-        if (!"welcome1".equals(password)) {
+        String tenant = values[0];
+        String username = values[1];
+
+        // So two Users with same password will showup as different hashes.
+        String hash = pm.hash(tenant + username + password);
+        if (!hash.equals(pm.getHash(tenant, username))) {
             abort(ctxt);
             return;
         }
 
         User user = new User();
+        user.setTenant(tenant);
         user.setName(username);
         user.getRoles().add("DEMO");
 
-        if (Roles.H_ADMIN.equals(username)) {
+        if ("hiinoono".equals(tenant) && "admin".equals(username)) {
             user.getRoles().add(Roles.H_ADMIN);
         }
+
+        if ("admin".equals(username)) {
+            // Tenant Administrator
+            user.getRoles().add(Roles.T_ADMIN);
+            user.getRoles().add(user.getTenant() + "/" + user.getName());
+        }
+
+        LOG.info("Logged in: " + user.getTenant() + "/" + user.getName() + " "
+                + user.getRoles());
 
         ctxt.setSecurityContext(new Authorizer(user));
 

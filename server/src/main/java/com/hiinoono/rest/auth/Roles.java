@@ -12,4 +12,9 @@ public interface Roles {
      */
     String H_ADMIN = "HiinoonoAdmin";
 
+    /**
+     * Administrator Role for a given Tenant.
+     */
+    String T_ADMIN = "TenantAdmin";
+
 }

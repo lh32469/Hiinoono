@@ -1,5 +1,6 @@
 package com.hiinoono.persistence;
 
+import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
 import java.util.stream.Stream;
 
@@ -19,6 +20,34 @@ public interface PersistenceManager {
 
 
     Tenant getTenantByName(String name);
+
+
+    /**
+     * Get Stream of all Nodes.
+     *
+     * @return
+     */
+    Stream<Node> getNodes();
+
+
+    /**
+     * Get password hash for named User of given Tenant name.
+     *
+     * @param tenant Name of the Tenant User belongs to.
+     * @param username Name of the User.
+     *
+     * @return Hash for the User.
+     */
+    String getHash(String tenant, String username);
+
+
+    /**
+     * Utility method that calculates a hash for the String provided.
+     *
+     * @param string
+     * @return
+     */
+    String hash(String string);
 
 
 }
