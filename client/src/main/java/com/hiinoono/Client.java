@@ -78,7 +78,7 @@ public class Client {
             System.exit(1);
         }
 
-        LOG.info("Version: " + getVersion());
+        LOG.info("Client Version: " + getVersion());
 
         if (cmd.hasOption(HELP) || cmd.getOptions().length == 0) {
             HelpFormatter formatter = new HelpFormatter();
@@ -157,8 +157,12 @@ public class Client {
             if (ex.getResponse().getStatus() == 404) {
                 LOG.error("Invalid Hiinoono Service API URL.");
             } else {
-                LOG.error(ex.getLocalizedMessage());
-                LOG.error(ex.getResponse().readEntity(String.class));
+                String entity = ex.getResponse().readEntity(String.class);
+                if (entity != null && !entity.isEmpty()) {
+                    LOG.error(entity);
+                } else {
+                    LOG.error(ex.getLocalizedMessage());
+                }
             }
             return;
         } catch (ProcessingException ex) {
@@ -173,8 +177,12 @@ public class Client {
             }
 
         } catch (WebApplicationException ex) {
-            LOG.error(ex.getLocalizedMessage());
-            LOG.error(ex.getResponse().readEntity(String.class));
+            String entity = ex.getResponse().readEntity(String.class);
+            if (entity != null && !entity.isEmpty()) {
+                LOG.error(entity);
+            } else {
+                LOG.error(ex.getLocalizedMessage());
+            }
         } catch (ProcessingException ex) {
             LOG.error("Invalid Hiinoono Service API URL.");
             LOG.error(ex.getLocalizedMessage());
