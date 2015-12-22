@@ -61,8 +61,6 @@ public class TenantResource {
             message = "You are not permitted to list tenants.")
     public Tenants getTenants() {
 
-        System.out.println("PM: " + pm);
-        System.out.println("Principal: " + sc.getUserPrincipal().getName());
         Tenants t = new Tenants();
         t.getTenants().addAll(getTenantsAsList());
         return t;
