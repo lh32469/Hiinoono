@@ -130,7 +130,7 @@ public class Client {
             System.exit(1);
         }
 
-        LOG.info("Connecting to: " + svc);
+        LOG.info("Connecting to: " + svc + " as " + user);
 
         HttpAuthenticationFeature authentication
                 = HttpAuthenticationFeature.basic(user, pass);
