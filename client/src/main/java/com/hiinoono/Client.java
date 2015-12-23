@@ -14,6 +14,8 @@ import java.util.Properties;
 import java.util.Scanner;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -51,6 +53,10 @@ public class Client {
     private static final String HELP = "help";
 
     private static final String VERSION = "version";
+
+    private static final String ADD_TENANT = "addTenant";
+
+    private static final String ADD_VM = "addVm";
 
     private static final String CLIENT = "HiinoonoClient";
 
@@ -174,6 +180,8 @@ public class Client {
 
             if (cmd.hasOption(LIST)) {
                 list(cmd, c, svc);
+            } else if (cmd.hasOption(ADD_TENANT)) {
+                addTenant(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -225,8 +233,8 @@ public class Client {
             // TODO: Better formatting
             System.out.println("");
             for (Tenant tenant : tenants.getTenant()) {
-                System.out.printf("%-15s%-20s\n",
-                        tenant.getName(), tenant.getAdmin().getEmail());
+                System.out.printf("%-15s\n",
+                        tenant.getName());
             }
             System.out.println("");
 
@@ -280,15 +288,43 @@ public class Client {
                 .build();
         options.addOption(service);
 
-        Option addTenant = Option.builder("a")
+        Option addTenant = Option.builder()
                 .hasArgs()
                 .argName("name")
-                .longOpt("addTenant")
+                .longOpt(ADD_TENANT)
                 .desc("Add a new Tenant.")
                 .build();
         options.addOption(addTenant);
 
+        Option addVm = Option.builder()
+                .hasArgs()
+                .argName("fileName")
+                .longOpt(ADD_VM)
+                .desc("Add a new Virtual Machine.")
+                .build();
+        options.addOption(addVm);
+
         return options;
+    }
+
+
+    private static void addTenant(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+        String name = cmd.getOptionValue(ADD_TENANT);
+        HClient.Tenant t = HClient.tenant(c, URI.create(svc));
+        Tenant newTenant = new Tenant();
+        newTenant.setName(name);
+        Response response = t.postXml(newTenant);
+        if (response.getStatus() >= 400) {
+            String entity = response.readEntity(String.class);
+            if (entity != null && !entity.isEmpty()) {
+                LOG.error(entity);
+            } else {
+                LOG.error("" + response.getStatus());
+            }
+        }
+
     }
 
 
