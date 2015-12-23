@@ -36,7 +36,7 @@ public class API extends ResourceConfig {
 
         // Exception Mappers
         //register(HiinoonoExceptionMapper.class);
-        //register(DefaultExceptionMapper.class);
+        register(DefaultExceptionMapper.class);
         register(ClientErrorExceptionMapper.class);
 
         if (System.getProperty("LOG") != null) {
