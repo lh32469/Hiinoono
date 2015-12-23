@@ -18,9 +18,6 @@
             <xs:element name="name"
                         maxOccurs="1"
                         type="xs:string"/>
-            <xs:element name="admin"
-                        maxOccurs="1"
-                        type="user"/>
             <xs:element name="user"
                         minOccurs="0"
                         maxOccurs="unbounded"
