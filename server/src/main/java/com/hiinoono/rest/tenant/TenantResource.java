@@ -9,11 +9,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotAcceptableException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +50,6 @@ public class TenantResource {
 
         // Clear passwords before sending
         return pm.getTenants().map((tenant) -> {
-            tenant.getAdmin().setPassword("***");
             tenant.getUsers().stream().forEach((user) -> {
                 user.setPassword("***");
             });
@@ -68,6 +71,20 @@ public class TenantResource {
     }
 
 
+    @POST
+    @Consumes(MediaType.APPLICATION_XML)
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
+            message = "You are not permitted to add tenants.")
+    public void addTenant(Tenant t) {
+        LOG.info(t.getName());
+        if (getTenant(t.getName()) != null) {
+            throw new NotAcceptableException("Tenant " + t.getName()
+                    + " already exists.");
+        }
+        pm.addTenant(t);
+    }
+
+
     @GET
     @Path("{name}")
     public Tenant getTenant(@PathParam("name") String name) {
@@ -84,7 +101,6 @@ public class TenantResource {
         Tenant t = pm.getTenantByName(name);
 
         if (t != null) {
-            t.getAdmin().setPassword("***");
             t.getUsers().stream().forEach((user) -> {
                 user.setPassword("***");
             });
