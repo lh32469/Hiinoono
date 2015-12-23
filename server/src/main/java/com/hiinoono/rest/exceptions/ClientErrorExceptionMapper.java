@@ -5,6 +5,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -17,8 +18,13 @@ import javax.ws.rs.ext.Provider;
 public class ClientErrorExceptionMapper
         implements ExceptionMapper<ClientErrorException> {
 
+    final static private org.slf4j.Logger LOG
+            = LoggerFactory.getLogger(ClientErrorExceptionMapper.class);
+
+
     @Override
     public Response toResponse(ClientErrorException ex) {
+        LOG.error(ex.getMessage(), ex);
 
         ResponseBuilder bldr = Response.status(ex.getResponse().getStatus());
         bldr.entity(ex.getMessage() + "\n");
