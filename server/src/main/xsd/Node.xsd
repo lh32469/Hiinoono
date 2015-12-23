@@ -25,6 +25,10 @@
                         minOccurs="0"
                         maxOccurs="1"
                         type="status"/>
+            <xs:element name="ksm"
+                        minOccurs="0"
+                        maxOccurs="1"
+                        type="ksm"/>
         </xs:sequence>  
     </xs:complexType>
     
@@ -42,6 +46,22 @@
                         type="node"/>
         </xs:sequence>  
     </xs:complexType>
-     
- 
+
+    <!-- For Kernel Shared Memory settings -->
+    <xs:element name="ksm" type="ksm" />
+
+    <xs:complexType name="ksm">
+        <xs:sequence>
+            <xs:element name="pages_to_scan"
+                        maxOccurs="1"
+                        type="xs:int"/>
+            <xs:element name="sleep_millisecs"
+                        maxOccurs="1"
+                        type="xs:int"/>
+            <xs:element name="run"
+                        maxOccurs="1"
+                        type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+
 </xs:schema>
