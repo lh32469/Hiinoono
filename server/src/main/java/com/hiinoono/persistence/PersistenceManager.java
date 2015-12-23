@@ -19,6 +19,9 @@ public interface PersistenceManager {
     Stream<Tenant> getTenants();
 
 
+    void addTenant(Tenant t);
+
+
     Tenant getTenantByName(String name);
 
 

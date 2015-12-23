@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,9 @@ import org.slf4j.LoggerFactory;
  */
 public class UnitTestPersistenceManager implements PersistenceManager {
 
-    List<Node> nodes = new LinkedList<>();
+    final List<Node> nodes = new LinkedList<>();
+
+    final List<Tenant> tenants = new LinkedList<>();
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(UnitTestPersistenceManager.class);
@@ -40,23 +43,12 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
         nodes.add(node1);
 
-    }
-
-
-    @Override
-    public Stream<Tenant> getTenants() {
-
-        List<Tenant> tenants = new LinkedList<>();
-
+        /*
+         * Initialize Tenants.
+         */
         Tenant t1 = new Tenant();
         t1.setName("Hiinoono");
 
-        User admin = new User();
-        admin.setName("Hiinoono Administrator");
-        admin.setEmail("hiinoono@hinoono.com");
-        admin.setPassword("welcome1");
-
-        t1.setAdmin(admin);
         tenants.add(t1);
 
         User u1 = new User();
@@ -69,20 +61,20 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
         Tenant t2 = new Tenant();
         t2.setName("Hiinoono-2");
-        admin = new User();
-        admin.setName("Hiinoono-2 Administrator");
-        admin.setEmail("hiinoono-2@hinoono.com");
-        admin.setPassword("welcome1");
-        t2.setAdmin(admin);
 
         tenants.add(t2);
 
+    }
+
+
+    @Override
+    public synchronized Stream<Tenant> getTenants() {
         return tenants.stream();
     }
 
 
     @Override
-    public Tenant getTenantByName(String name) {
+    public synchronized Tenant getTenantByName(String name) {
 
         Optional<Tenant> tenant
                 = getTenants().filter(
@@ -93,14 +85,14 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
 
     @Override
-    public Stream<Node> getNodes() {
+    public synchronized Stream<Node> getNodes() {
 
         return nodes.stream();
     }
 
 
     @Override
-    public String getHash(String tenant, String username) {
+    public synchronized String getHash(String tenant, String username) {
         return hash(tenant + username + "welcome1");
     }
 
@@ -126,6 +118,12 @@ public class UnitTestPersistenceManager implements PersistenceManager {
         }
 
         return null;
+    }
+
+
+    @Override
+    public synchronized void addTenant(Tenant t) {
+        tenants.add(t);
     }
 
 
