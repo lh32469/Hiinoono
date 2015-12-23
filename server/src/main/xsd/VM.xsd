@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+           xmlns:hn="http://jaxb.hiinoono.com"
+           jaxb:version="2.1"
+           jaxb:extensionBindingPrefixes="xjc"
+           xmlns="http://jaxb.hiinoono.com"
+           targetNamespace="http://jaxb.hiinoono.com"
+           elementFormDefault="qualified">
+  
+   
+    <xs:element name="VM" type="VM" />
+    
+    <xs:complexType name="VM">
+        <xs:sequence>
+            <xs:element name="name"
+                        maxOccurs="1"
+                        type="xs:string"/>   
+            <xs:element name="state"
+                        maxOccurs="1"
+                        type="state"/>
+            <xs:element name="drive"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="cpu"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="smp"
+                        maxOccurs="1"
+                        type="xs:string"/> 
+            <xs:element name="drive"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="machineType"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="ram"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="vnc"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <xs:element name="macaddr"
+                        maxOccurs="1"
+                        type="xs:string"/>
+        </xs:sequence>  
+    </xs:complexType>
+    
+    <xs:simpleType name="state">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STOPPED"/>  
+            <xs:enumeration value="STARTING"/>  
+            <xs:enumeration value="RUNNING"/>  
+            <xs:enumeration value="STOPPING"/>  
+            <xs:enumeration value="STOPPED"/>
+            <xs:enumeration value="WARNING"/>
+            <xs:enumeration value="ERROR"/>
+        </xs:restriction>
+    </xs:simpleType>
+     
+    <!-- 
+    Wrapper element since Jersey default WADL generator only generates 
+    a VM for a @GET method that returns List<VM>
+    -->
+    <xs:element name="VMs" type="VMs" />
+    
+    <xs:complexType name="VMs">
+        <xs:sequence>
+            <xs:element name="VM"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="VM"/>
+        </xs:sequence>  
+    </xs:complexType>
+    
+    
+</xs:schema>
