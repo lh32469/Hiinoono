@@ -22,6 +22,9 @@ public interface PersistenceManager {
     void addTenant(Tenant t);
 
 
+    void deleteTenant(String tenantName);
+
+
     Tenant getTenantByName(String name);
 
 

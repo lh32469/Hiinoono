@@ -57,4 +57,12 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     }
 
 
+    @Override
+    public void deleteTenant(String tenantName) {
+        //To change body of generated methods, choose Tools | Templates.
+        Logger.getLogger(this.getClass().getName()).severe("Not supported yet.");
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+
 }

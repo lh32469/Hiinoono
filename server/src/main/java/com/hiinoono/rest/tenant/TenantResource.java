@@ -86,6 +86,20 @@ public class TenantResource {
 
 
     @GET
+    @Path("delete/{name}")
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
+            message = "You are not permitted to delete tenants.")
+    public void deleteTenant(@PathParam("name") String tenantName) {
+        LOG.info(tenantName);
+        if (getTenant(tenantName) == null) {
+            throw new NotAcceptableException("Tenant " + tenantName
+                    + " doesn't exist.");
+        }
+        pm.deleteTenant(tenantName);
+    }
+
+
+    @GET
     @Path("{name}")
     public Tenant getTenant(@PathParam("name") String name) {
         LOG.debug(name);

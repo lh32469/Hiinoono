@@ -8,11 +8,11 @@ import com.hiinoono.jaxb.Value;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.slf4j.LoggerFactory;
 
@@ -124,6 +124,22 @@ public class UnitTestPersistenceManager implements PersistenceManager {
     @Override
     public synchronized void addTenant(Tenant t) {
         tenants.add(t);
+    }
+
+
+    @Override
+    public void deleteTenant(String tenantName) {
+
+        // Nothing faster than an Iterator for removing from List
+        Iterator<Tenant> iter = tenants.iterator();
+
+        while (iter.hasNext()) {
+            Tenant t = iter.next();
+            if (tenantName.equals(t.getName())) {
+                iter.remove();
+                break;
+            }
+        }
     }
 
 
