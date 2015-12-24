@@ -17,7 +17,10 @@
         <xs:sequence>
             <xs:element name="name"
                         maxOccurs="1"
-                        type="xs:string"/>
+                        type="xs:string"/>  
+            <xs:element name="joined"
+                        maxOccurs="1"
+                        type="xs:dateTime"/>
             <xs:element name="user"
                         minOccurs="0"
                         maxOccurs="unbounded"
