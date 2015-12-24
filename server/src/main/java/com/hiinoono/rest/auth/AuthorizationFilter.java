@@ -45,7 +45,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
                 = ctxt.getHeaderString(ContainerRequest.AUTHORIZATION);
 
         if (authorization == null) {
-            // No authorization.
+            LOG.info(" No authorization.");
             abort(ctxt);
             return;
         }
@@ -56,7 +56,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
                 .decode(authorization)).split(":");
 
         if (values.length < 2) {
-            // "Invalid syntax for username and password"
+            LOG.info("Invalid syntax for username and password");
             abort(ctxt);
             return;
         }
