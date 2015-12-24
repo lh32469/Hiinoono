@@ -12,6 +12,7 @@ import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ContainerFactory;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -40,7 +41,7 @@ public class Server {
 
         HttpHandler api
                 = delegate.createEndpoint(new API(), clazz);
-        
+
         serverConfig.addHttpHandler(api, "/api");
 
         // Add Hystrix Servlet for Dashboard
@@ -48,7 +49,10 @@ public class Server {
         context.addServlet("MetricsStreamServlet",
                 HystrixMetricsStreamServlet.class);
         context.deploy(server);
-        
+
+        System.out.println("\nWeb Application Description available at:\n\t"
+                + base + "/api/application.wadl");
+
         return server;
     }
 
