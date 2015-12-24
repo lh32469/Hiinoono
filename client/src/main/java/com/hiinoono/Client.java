@@ -10,12 +10,17 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.GregorianCalendar;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -55,6 +60,8 @@ public class Client {
     private static final String VERSION = "version";
 
     private static final String ADD_TENANT = "addTenant";
+
+    private static final String DELETE_TENANT = "deleteTenant";
 
     private static final String ADD_VM = "addVm";
 
@@ -182,6 +189,8 @@ public class Client {
                 list(cmd, c, svc);
             } else if (cmd.hasOption(ADD_TENANT)) {
                 addTenant(cmd, c, svc);
+            } else if (cmd.hasOption(DELETE_TENANT)) {
+                deleteTenant(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -193,6 +202,8 @@ public class Client {
             }
         } catch (ProcessingException ex) {
             LOG.error("Invalid Hiinoono Service API URL.");
+            LOG.error(ex.getLocalizedMessage());
+        } catch (DatatypeConfigurationException ex) {
             LOG.error(ex.getLocalizedMessage());
         }
 
@@ -231,10 +242,13 @@ public class Client {
             HClient.Tenant t = HClient.tenant(c, URI.create(svc));
             Tenants tenants = t.getAsTenants();
             // TODO: Better formatting
+            final String format = "%-15s%-25s\n";
             System.out.println("");
+            System.out.printf(format,
+                    "Tenant", "Joined");
             for (Tenant tenant : tenants.getTenant()) {
-                System.out.printf("%-15s\n",
-                        tenant.getName());
+                System.out.printf(format,
+                        tenant.getName(), tenant.getJoined());
             }
             System.out.println("");
 
@@ -296,6 +310,14 @@ public class Client {
                 .build();
         options.addOption(addTenant);
 
+        Option deleteTenant = Option.builder()
+                .hasArgs()
+                .argName("name")
+                .longOpt(DELETE_TENANT)
+                .desc("Delete a Tenant.")
+                .build();
+        options.addOption(deleteTenant);
+
         Option addVm = Option.builder()
                 .hasArgs()
                 .argName("fileName")
@@ -310,21 +332,40 @@ public class Client {
 
     private static void addTenant(CommandLine cmd,
             javax.ws.rs.client.Client c,
-            String svc) {
+            String svc) throws DatatypeConfigurationException {
+
         String name = cmd.getOptionValue(ADD_TENANT);
         HClient.Tenant t = HClient.tenant(c, URI.create(svc));
+        
         Tenant newTenant = new Tenant();
         newTenant.setName(name);
+        GregorianCalendar date = new GregorianCalendar();
+        XMLGregorianCalendar date2
+                = DatatypeFactory.newInstance().newXMLGregorianCalendar(date);
+        newTenant.setJoined(date2);
+        
         Response response = t.postXml(newTenant);
+        
         if (response.getStatus() >= 400) {
-            String entity = response.readEntity(String.class);
-            if (entity != null && !entity.isEmpty()) {
-                LOG.error(entity);
-            } else {
-                LOG.error("" + response.getStatus());
-            }
+             throw new WebApplicationException(response);
         }
 
+    }
+
+
+    private static void deleteTenant(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String name = cmd.getOptionValue(DELETE_TENANT);
+        HClient.Tenant t = HClient.tenant(c, URI.create(svc));
+        HClient.Tenant.DeleteName request = t.deleteName(name);
+
+        Response response = request.get();
+
+        if (response.getStatus() >= 400) {
+            throw new WebApplicationException(response);
+        }
     }
 
 
