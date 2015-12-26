@@ -2,6 +2,7 @@ package com.hiinoono.rest.auth;
 
 import com.hiinoono.jaxb.User;
 import java.security.Principal;
+import java.util.logging.Logger;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,7 @@ public class Authorizer implements SecurityContext {
 
     public Authorizer(final User user) {
         this.user = user;
-        this.principal = user::getName;
+        this.principal = () -> user.getTenant() + "/" + user.getName();
     }
 
 
