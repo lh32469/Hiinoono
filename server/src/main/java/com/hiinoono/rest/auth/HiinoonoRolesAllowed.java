@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 
 
 /**
+ * For user with HiinoonoRolesFeature for security access.
  *
  * @author Lyle T Harris
  */
@@ -16,9 +17,20 @@ import java.lang.annotation.Target;
 @Target(value = {ElementType.TYPE, ElementType.METHOD})
 public @interface HiinoonoRolesAllowed {
 
+    /**
+     * User Roles that are allowed to access the annotated method.
+     *
+     * @return
+     */
     public String[] roles();
 
 
+    /**
+     * Message to be returned to Client/User if User is not in one of the Roles
+     * present in roles().
+     *
+     * @return
+     */
     public String message();
 
 
