@@ -24,6 +24,9 @@
             <xs:element name="email"
                         maxOccurs="1"
                         type="xs:string"/>
+            <xs:element name="joined"
+                        maxOccurs="1"
+                        type="xs:dateTime"/>
             <xs:element name="password"
                         maxOccurs="1"
                         type="xs:string"/>
