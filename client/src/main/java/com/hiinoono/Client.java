@@ -4,23 +4,19 @@ import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
 import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.jaxb.User;
 import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.rest.api.model.HClient;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -61,7 +57,11 @@ public class Client {
 
     private static final String ADD_TENANT = "addTenant";
 
+    private static final String ADD_USER = "addUser";
+
     private static final String DELETE_TENANT = "deleteTenant";
+
+    private static final String DELETE_USER = "deleteUser";
 
     private static final String ADD_VM = "addVm";
 
@@ -70,6 +70,8 @@ public class Client {
     private static final String USER = "HIINOONO_USER";
 
     private static final String PASS = "HIINOONO_PASSWORD";
+
+    private static User user;
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(Client.class);
@@ -131,11 +133,23 @@ public class Client {
             System.setProperty("http.proxyPort", port);
         }
 
-        String user = System.getenv(USER);
-        if (user == null) {
+        String _user = System.getenv(USER);
+        if (_user == null) {
             LOG.error(USER + " environment variable not set");
             System.exit(1);
         }
+
+        _user = _user.replaceAll("/", " ").trim();
+
+        String[] values = _user.split(" ");
+        if (values.length < 2) {
+            LOG.error("Invalid syntax for login:  " + _user);
+            return;
+        }
+
+        user = new User();
+        user.setTenant(values[0]);
+        user.setName(values[1]);
 
         String pass = System.getenv(PASS);
         if (pass == null) {
@@ -143,10 +157,12 @@ public class Client {
             System.exit(1);
         }
 
-        LOG.info("Connecting to: " + svc + " as " + user);
+        LOG.info("Connecting to: " + svc + " as "
+                + user.getTenant() + "/" + user.getName());
 
         HttpAuthenticationFeature authentication
-                = HttpAuthenticationFeature.basic(user, pass);
+                = HttpAuthenticationFeature.basic(user.getTenant()
+                        + "/" + user.getName(), pass);
 
         javax.ws.rs.client.Client c = HClient.createClient();
 
@@ -191,6 +207,10 @@ public class Client {
                 addTenant(cmd, c, svc);
             } else if (cmd.hasOption(DELETE_TENANT)) {
                 deleteTenant(cmd, c, svc);
+            } else if (cmd.hasOption(ADD_USER)) {
+                addUser(cmd, c, svc);
+            } else if (cmd.hasOption(DELETE_USER)) {
+                deleteUser(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -318,6 +338,22 @@ public class Client {
                 .build();
         options.addOption(deleteTenant);
 
+        Option addUser = Option.builder()
+                .hasArgs()
+                .argName("name")
+                .longOpt(ADD_USER)
+                .desc("Add a new User.  (Must be Tenant Admin)")
+                .build();
+        options.addOption(addUser);
+
+        Option deleteUser = Option.builder()
+                .hasArgs()
+                .argName("name")
+                .longOpt(DELETE_USER)
+                .desc("Delete a User.  (Must be Tenant Admin)")
+                .build();
+        options.addOption(deleteUser);
+
         Option addVm = Option.builder()
                 .hasArgs()
                 .argName("fileName")
@@ -336,18 +372,34 @@ public class Client {
 
         String name = cmd.getOptionValue(ADD_TENANT);
         HClient.Tenant t = HClient.tenant(c, URI.create(svc));
-        
+
         Tenant newTenant = new Tenant();
         newTenant.setName(name);
-        GregorianCalendar date = new GregorianCalendar();
-        XMLGregorianCalendar date2
-                = DatatypeFactory.newInstance().newXMLGregorianCalendar(date);
-        newTenant.setJoined(date2);
-        
+
         Response response = t.postXml(newTenant);
-        
+
         if (response.getStatus() >= 400) {
-             throw new WebApplicationException(response);
+            throw new WebApplicationException(response);
+        }
+
+    }
+
+
+    private static void addUser(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) throws DatatypeConfigurationException {
+
+        String newUserName = cmd.getOptionValue(ADD_USER);
+        HClient.User u = HClient.user(c, URI.create(svc));
+
+        User _user = new User();
+        // Set Tenant name the same as logged-in User.
+        _user.setTenant(user.getTenant());
+        _user.setName(newUserName);
+        Response response = u.postXml(_user);
+
+        if (response.getStatus() >= 400) {
+            throw new WebApplicationException(response);
         }
 
     }
@@ -361,11 +413,28 @@ public class Client {
         HClient.Tenant t = HClient.tenant(c, URI.create(svc));
         HClient.Tenant.DeleteName request = t.deleteName(name);
 
-        Response response = request.get();
+        Response response = request.getAs(Response.class);
 
         if (response.getStatus() >= 400) {
             throw new WebApplicationException(response);
         }
+    }
+
+
+    private static void deleteUser(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String userName = cmd.getOptionValue(DELETE_USER);
+        HClient.User u = HClient.user(c, URI.create(svc));
+        HClient.User.DeleteName request = u.deleteName(userName);
+
+        Response response = request.getAs(Response.class);
+
+        if (response.getStatus() >= 400) {
+            throw new WebApplicationException(response);
+        }
+
     }
 
 
