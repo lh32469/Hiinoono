@@ -98,14 +98,15 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         user.setName(username);
         user.getRoles().add("DEMO");
 
-        if ("hiinoono".equals(tenant) && "admin".equals(username)) {
-            user.getRoles().add(Roles.H_ADMIN);
-        }
-
         if ("admin".equals(username)) {
-            // Tenant Administrator
-            user.getRoles().add(Roles.T_ADMIN);
-            user.getRoles().add(user.getTenant() + "/" + user.getName());
+            if ("hiinoono".equals(tenant)) {
+                // Hiinoono Administrator
+                user.getRoles().add(Roles.H_ADMIN);
+            } else {
+                // Tenant Administrator
+                user.getRoles().add(Roles.T_ADMIN);
+                user.getRoles().add(user.getTenant() + "/" + user.getName());
+            }
         }
 
         LOG.info("Logged in: " + user.getTenant() + "/" + user.getName() + " "
