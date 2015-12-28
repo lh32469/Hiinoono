@@ -2,7 +2,7 @@ package com.hiinoono.rest.site;
 
 import com.hiinoono.jaxb.SiteInfo;
 import com.hiinoono.persistence.PersistenceManager;
-import com.hiinoono.persistence.ZooKeeperPersistenceManager;
+import com.hiinoono.persistence.zk.ZooKeeperPersistenceManager;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
