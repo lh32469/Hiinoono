@@ -5,6 +5,7 @@ import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
@@ -18,7 +19,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.slf4j.LoggerFactory;
 
 
@@ -75,12 +80,13 @@ public class TenantResource {
     @Consumes(MediaType.APPLICATION_XML)
     @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
             message = "You are not permitted to add tenants.")
-    public void addTenant(Tenant t) {
+    public void addTenant(Tenant t) throws DatatypeConfigurationException {
         LOG.info(t.getName());
         if (getTenant(t.getName()) != null) {
             throw new NotAcceptableException("Tenant " + t.getName()
                     + " already exists.");
         }
+        t.setJoined(now());
         pm.addTenant(t);
     }
 
@@ -89,13 +95,14 @@ public class TenantResource {
     @Path("delete/{name}")
     @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
             message = "You are not permitted to delete tenants.")
-    public void deleteTenant(@PathParam("name") String tenantName) {
+    public Response deleteTenant(@PathParam("name") String tenantName) {
         LOG.info(tenantName);
         if (getTenant(tenantName) == null) {
             throw new NotAcceptableException("Tenant " + tenantName
                     + " doesn't exist.");
         }
         pm.deleteTenant(tenantName);
+        return Response.ok().build();
     }
 
 
@@ -121,6 +128,19 @@ public class TenantResource {
         }
 
         return t;
+    }
+
+
+    /**
+     * Get current date and time.
+     *
+     * @return
+     * @throws DatatypeConfigurationException
+     */
+    XMLGregorianCalendar now() throws DatatypeConfigurationException {
+        GregorianCalendar date = new GregorianCalendar();
+        DatatypeFactory dtf = DatatypeFactory.newInstance();
+        return dtf.newXMLGregorianCalendar(date);
     }
 
 
