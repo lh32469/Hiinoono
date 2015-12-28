@@ -143,4 +143,10 @@ public class UnitTestPersistenceManager implements PersistenceManager {
     }
 
 
+    @Override
+    public void persist(Object obj) {
+        // Not really needed here since all objects are in memory.
+    }
+
+
 }

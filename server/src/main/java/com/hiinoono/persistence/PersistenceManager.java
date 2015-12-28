@@ -37,6 +37,14 @@ public interface PersistenceManager {
 
 
     /**
+     * Save the object to persistent storage.
+     *
+     * @param obj
+     */
+    void persist(Object obj);
+
+
+    /**
      * Get password hash for named User of given Tenant name.
      *
      * @param tenant Name of the Tenant User belongs to.
