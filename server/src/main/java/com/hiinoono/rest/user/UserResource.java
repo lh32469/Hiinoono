@@ -75,9 +75,11 @@ public class UserResource {
                         + " already exists.");
             }
         }
-        
+
         u.setJoined(now());
         t.getUsers().add(u);
+
+        pm.persist(t);
 
     }
 
@@ -120,6 +122,8 @@ public class UserResource {
             }
 
         }
+        
+        pm.persist(t);
 
         return Response.ok().build();
     }
