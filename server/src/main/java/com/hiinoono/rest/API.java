@@ -68,11 +68,13 @@ public class API extends ResourceConfig {
             String zooKeepers = System.getProperty("zooKeepers");
 
             if (zooKeepers == null) {
-                bind(new UnitTestPersistenceManager()).to(PersistenceManager.class);
+                bind(new UnitTestPersistenceManager())
+                        .to(PersistenceManager.class);
             } else {
                 try {
-                    bind(new ZooKeeperClient(zooKeepers,"Welcome1"));
-                    bindAsContract(ZooKeeperPersistenceManager.class).to(PersistenceManager.class);
+                    bind(new ZooKeeperClient(zooKeepers, "Welcome1"));
+                    bindAsContract(ZooKeeperPersistenceManager.class)
+                            .to(PersistenceManager.class);
                 } catch (IOException ex) {
                     System.err.println(ex.getLocalizedMessage());
                     System.exit(1);
