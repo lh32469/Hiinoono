@@ -2,6 +2,7 @@ package com.hiinoono.persistence;
 
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 
@@ -25,7 +26,10 @@ public interface PersistenceManager {
     void deleteTenant(String tenantName);
 
 
-    Tenant getTenantByName(String name);
+    /** 
+     * Get the named Tenant object if it exists.
+     */
+    Optional<Tenant> getTenantByName(String name);
 
 
     /**

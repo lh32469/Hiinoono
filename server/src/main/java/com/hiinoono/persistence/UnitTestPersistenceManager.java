@@ -74,13 +74,13 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
 
     @Override
-    public synchronized Tenant getTenantByName(String name) {
+    public synchronized Optional<Tenant> getTenantByName(String name) {
 
         Optional<Tenant> tenant
                 = getTenants().filter(
                         t -> t.getName().equals(name)).findFirst();
 
-        return tenant.orElse(null);
+        return tenant;
     }
 
 
