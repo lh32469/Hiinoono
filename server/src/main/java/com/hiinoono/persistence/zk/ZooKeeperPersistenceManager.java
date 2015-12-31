@@ -2,9 +2,9 @@ package com.hiinoono.persistence.zk;
 
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.jaxb.User;
 import com.hiinoono.persistence.PersistenceManager;
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -12,10 +12,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
@@ -25,7 +28,9 @@ import javax.inject.Inject;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -46,6 +51,12 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     private ZooKeeper zk;
 
     public static final String TENANTS = "/tenants";
+
+    /**
+     * Whether or not the initial setup of /tenants and hiinoono admin user has
+     * been attempted. Need a better way of doing this at some point..
+     */
+    private static boolean initialized = false;
 
     /**
      * ACL to create nodes with.
@@ -91,13 +102,35 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
 
     @PostConstruct
-    void postConstruct() throws KeeperException, InterruptedException {
-        System.out.println(this + "\n" + zooKeeperClient);
+    void postConstruct() throws KeeperException, InterruptedException,
+            DatatypeConfigurationException {
+
         this.zk = zooKeeperClient.getZookeeper();
-//        if (zk.exists(TENANTS, null) == null) {
-//            zk.create(TENANTS, "Initialized".getBytes(),
-//                    acl, CreateMode.PERSISTENT);
-//        }
+
+        if (!initialized) {
+            System.out.println("Initializing...");
+
+            if (zk.exists(TENANTS, null) == null) {
+                zk.create(TENANTS, "Initialized".getBytes(),
+                        acl, CreateMode.PERSISTENT);
+            }
+
+            if (zk.exists((TENANTS + "/hiinoono"), null) == null) {
+                Tenant t = new Tenant();
+                t.setName("hiinoono");
+                t.setJoined(now());
+                User u = new User();
+                u.setName("admin");
+                u.setJoined(now());
+                u.setPassword(hash("hiinoonoadminWelcome1"));
+                t.getUsers().add(u);
+
+                this.addTenant(t);
+            }
+
+            initialized = true;
+        }
+
     }
 
 
@@ -108,7 +141,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             List<String> names = zk.getChildren(TENANTS, false);
             LOG.info(names.toString());
             for (String name : names) {
-                tenants.add(getTenantByName(name));
+                tenants.add(getTenantByName(name).get());
             }
             return tenants.stream();
         } catch (KeeperException | InterruptedException ex) {
@@ -119,21 +152,11 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
 
     @Override
-    public Tenant getTenantByName(String name) {
+    public Optional<Tenant> getTenantByName(String name) {
         LOG.info(name);
-        try {
 
-            Unmarshaller unMarshaller = jc.createUnmarshaller();
-            byte[] data = zk.getData(TENANTS + "/" + name, false, null);
-            String json = new String(decrypt(data));
-            LOG.info("Getting Tenant: " + "\n" + json);
-            Tenant t = (Tenant) unMarshaller.unmarshal(new StringReader(json));
-            return t;
-        } catch (KeeperException | InterruptedException |
-                JAXBException | GeneralSecurityException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
-            return null;
-        }
+        GetTenantByName get = new GetTenantByName(zk, name, key);
+        return get.execute();
     }
 
 
@@ -179,7 +202,24 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public String getHash(String tenant, String username) {
-        return hash(tenant + username + "welcome1");
+        Optional<Tenant> t = getTenantByName(tenant);
+
+        if (t.isPresent()) {
+            Optional<User> user = t.get().getUsers().stream()
+                    .filter(u -> u.getName().equals(username))
+                    .findFirst();
+
+            if (user.isPresent()) {
+                // "Password" in this context is hash 
+                // of tenant, username and password
+                LOG.info("Found: " + user.get().getPassword());
+                return user.get().getPassword();
+            }
+        }
+
+        // No possible match
+        LOG.info("No user found: " + tenant + "/" + username);
+        return UUID.randomUUID().toString();
     }
 
 
@@ -195,8 +235,8 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
             String hexStr = "";
             for (int i = 0; i < digest.length; i++) {
-                hexStr += Integer.toString((digest[i] & 0xff) + 
-                        0x100, 16).substring(1);
+                hexStr += Integer.toString((digest[i] & 0xff)
+                        + 0x100, 16).substring(1);
             }
             return hexStr;
 
@@ -252,6 +292,19 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         cipher.init(Cipher.DECRYPT_MODE, aesKey);
         return cipher.doFinal(encrypted);
 
+    }
+
+
+    /**
+     * Get current date and time.
+     *
+     * @return
+     * @throws DatatypeConfigurationException
+     */
+    XMLGregorianCalendar now() throws DatatypeConfigurationException {
+        GregorianCalendar date = new GregorianCalendar();
+        DatatypeFactory dtf = DatatypeFactory.newInstance();
+        return dtf.newXMLGregorianCalendar(date);
     }
 
 
