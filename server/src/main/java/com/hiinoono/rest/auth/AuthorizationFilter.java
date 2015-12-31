@@ -86,9 +86,8 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         String tenant = values[0];
         String username = values[1];
 
-        // So two Users with same password will showup as different hashes.
-        String hash = pm.hash(tenant + username + password);
-        if (!hash.equals(pm.getHash(tenant, username))) {
+        Authenticate a = new Authenticate(pm, tenant, username, password);
+        if (!a.execute()) {
             abort(ctxt);
             return;
         }
