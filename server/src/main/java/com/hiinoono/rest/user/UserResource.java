@@ -8,6 +8,8 @@ import com.hiinoono.rest.auth.Roles;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -16,6 +18,7 @@ import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -47,9 +50,10 @@ public class UserResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.TEXT_PLAIN)
     @HiinoonoRolesAllowed(roles = {Roles.T_ADMIN},
             message = "You are not permitted to add users.")
-    public void addUser(User u) throws DatatypeConfigurationException {
+    public Response addUser(User u) throws DatatypeConfigurationException {
         LOG.info(u.getName());
 
         final String tenantName = u.getTenant();
@@ -60,14 +64,14 @@ public class UserResource {
                     + " add Users to Tenant: " + tenantName);
         }
 
-        Tenant t = pm.getTenantByName(tenantName);
+        Optional<Tenant> t = pm.getTenantByName(tenantName);
 
-        if (t == null) {
+        if (!t.isPresent()) {
             throw new NotAcceptableException("Tenant " + tenantName
                     + " doesn't exist.");
         }
 
-        List<User> existingUsers = t.getUsers();
+        List<User> existingUsers = t.get().getUsers();
 
         for (User user : existingUsers) {
             if (user.getName().equals(u.getName())) {
@@ -76,11 +80,13 @@ public class UserResource {
             }
         }
 
+        String password = UUID.randomUUID().toString().substring(28);
         u.setJoined(now());
-        t.getUsers().add(u);
+        u.setPassword(pm.hash(u.getTenant() + u.getName() + password));
+        existingUsers.add(u);
 
         pm.persist(t);
-
+        return Response.ok("Password: " + password).build();
     }
 
 
@@ -104,14 +110,14 @@ public class UserResource {
                     + " add Users to Tenant: " + tenantName);
         }
 
-        Tenant t = pm.getTenantByName(tenantName);
+        Optional<Tenant> t = pm.getTenantByName(tenantName);
 
-        if (t == null) {
+        if (!t.isPresent()) {
             throw new NotAcceptableException("Tenant " + tenantName
                     + " doesn't exist.");
         }
 
-        Iterator<User> iter = t.getUsers().iterator();
+        Iterator<User> iter = t.get().getUsers().iterator();
 
         while (iter.hasNext()) {
             User user = iter.next();
@@ -122,7 +128,7 @@ public class UserResource {
             }
 
         }
-        
+
         pm.persist(t);
 
         return Response.ok().build();
