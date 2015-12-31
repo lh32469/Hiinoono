@@ -2,11 +2,14 @@ package com.hiinoono.rest.tenant;
 
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.Tenants;
+import com.hiinoono.jaxb.User;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
@@ -82,11 +85,22 @@ public class TenantResource {
             message = "You are not permitted to add tenants.")
     public void addTenant(Tenant t) throws DatatypeConfigurationException {
         LOG.info(t.getName());
-        if (getTenant(t.getName()) != null) {
+
+        if (pm.getTenantByName(t.getName()).isPresent()) {
             throw new NotAcceptableException("Tenant " + t.getName()
                     + " already exists.");
         }
+
+        // Clear any users provided from Client and add default Admin User.
+        
+        t.getUsers().clear();
+        User u = new User();
+        u.setName("admin");
+        String password = UUID.randomUUID().toString().substring(28);
+        u.setPassword(pm.hash(t.getName() + "admin" + password));
+        t.getUsers().add(u);
         t.setJoined(now());
+
         pm.addTenant(t);
     }
 
@@ -119,15 +133,15 @@ public class TenantResource {
                     + " view Tenant: " + name);
         }
 
-        Tenant t = pm.getTenantByName(name);
+        Optional<Tenant> t = pm.getTenantByName(name);
 
-        if (t != null) {
-            t.getUsers().stream().forEach((user) -> {
+        if (t.isPresent()) {
+            t.get().getUsers().stream().forEach((user) -> {
                 user.setPassword("***");
             });
         }
 
-        return t;
+        return t.orElse(null);
     }
 
 
