@@ -7,6 +7,7 @@ import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
 import java.util.GregorianCalendar;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -83,7 +84,7 @@ public class TenantResource {
     @Consumes(MediaType.APPLICATION_XML)
     @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
             message = "You are not permitted to add tenants.")
-    public void addTenant(Tenant t) throws DatatypeConfigurationException {
+    public Response addTenant(Tenant t) throws DatatypeConfigurationException {
         LOG.info(t.getName());
 
         if (pm.getTenantByName(t.getName()).isPresent()) {
@@ -92,7 +93,6 @@ public class TenantResource {
         }
 
         // Clear any users provided from Client and add default Admin User.
-        
         t.getUsers().clear();
         User u = new User();
         u.setName("admin");
@@ -102,6 +102,7 @@ public class TenantResource {
         t.setJoined(now());
 
         pm.addTenant(t);
+        return Response.ok("Password: " + password).build();
     }
 
 
