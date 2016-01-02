@@ -11,12 +11,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.Scanner;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.namespace.QName;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -376,10 +383,14 @@ public class Client {
         Tenant newTenant = new Tenant();
         newTenant.setName(name);
 
-        Response response = t.postXml(newTenant);
+        QName qname = new QName("tenant");
+        JAXBElement input = new JAXBElement(qname, Tenant.class, newTenant);
+        Response response = t.postXmlAs(input, Response.class);
 
         if (response.getStatus() >= 400) {
             throw new WebApplicationException(response);
+        } else {
+            LOG.info(response.readEntity(String.class));
         }
 
     }
@@ -396,12 +407,17 @@ public class Client {
         // Set Tenant name the same as logged-in User.
         _user.setTenant(user.getTenant());
         _user.setName(newUserName);
-        Response response = u.postXml(_user);
+
+        // QName qname = new QName("http://jaxb.hiinoono.com", "user");
+        QName qname = new QName("user");
+        JAXBElement input = new JAXBElement(qname, User.class, _user);
+        Response response = u.postXmlAsTextPlain(input, Response.class);
 
         if (response.getStatus() >= 400) {
             throw new WebApplicationException(response);
+        } else {
+            LOG.info(response.readEntity(String.class));
         }
-
     }
 
 
