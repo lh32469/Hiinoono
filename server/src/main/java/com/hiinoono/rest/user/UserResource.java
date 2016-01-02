@@ -85,7 +85,7 @@ public class UserResource {
         u.setPassword(pm.hash(u.getTenant() + u.getName() + password));
         existingUsers.add(u);
 
-        pm.persist(t);
+        pm.persist(t.get());
         return Response.ok("Password: " + password).build();
     }
 
