@@ -146,13 +146,13 @@ public class UnitTestPersistenceManager implements PersistenceManager {
         } else {
             LOG.debug("Not Found: " + name);
         }
+        
         return tenant;
     }
 
 
     @Override
     public synchronized Stream<Node> getNodes() {
-
         return nodes.stream();
     }
 
