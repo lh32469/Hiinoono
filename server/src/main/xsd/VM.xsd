@@ -30,9 +30,6 @@
                         type="xs:string"/>
             <xs:element name="smp"
                         maxOccurs="1"
-                        type="xs:string"/> 
-            <xs:element name="drive"
-                        maxOccurs="1"
                         type="xs:string"/>
             <xs:element name="machineType"
                         maxOccurs="1"
@@ -60,7 +57,7 @@
             <xs:enumeration value="ERROR"/>
         </xs:restriction>
     </xs:simpleType>
-     
+
     <!-- 
     Wrapper element since Jersey default WADL generator only generates 
     a VM for a @GET method that returns List<VM>
