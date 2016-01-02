@@ -1,19 +1,30 @@
 package com.hiinoono.persistence;
 
+import com.hiinoono.Utils;
+import static com.hiinoono.Utils.now;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.jaxb.Value;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
 
@@ -23,12 +34,36 @@ import org.slf4j.LoggerFactory;
  */
 public class UnitTestPersistenceManager implements PersistenceManager {
 
-    final List<Node> nodes = new LinkedList<>();
+    private static JAXBContext jc;
 
-    final List<Tenant> tenants = new LinkedList<>();
+    private final List<Node> nodes = new LinkedList<>();
+
+    private final List<Tenant> tenants = new LinkedList<>();
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(UnitTestPersistenceManager.class);
+
+
+    static {
+
+        Class[] classes = {
+            Node.class,
+            Tenant.class,
+            Tenants.class};
+
+        try {
+            Map<String, Object> properties = new HashMap<>();
+            properties.put("eclipselink.media-type", "application/json");
+            // properties.put(JAXBContextProperties.JSON_INCLUDE_ROOT, false);
+
+            jc = JAXBContextFactory.createContext(classes, properties);
+
+        } catch (JAXBException ex) {
+            LOG.error(ex.getErrorCode(), ex);
+            throw new IllegalStateException(ex);
+        }
+
+    }
 
 
     public UnitTestPersistenceManager() {
@@ -47,7 +82,13 @@ public class UnitTestPersistenceManager implements PersistenceManager {
          * Initialize Tenants.
          */
         Tenant t1 = new Tenant();
-        t1.setName("Hiinoono");
+        t1.setName("hiinoono");
+        t1.setJoined(now());
+        User u = new User();
+        u.setName("admin");
+        u.setJoined(now());
+        u.setPassword(Utils.hash("hiinoonoadminWelcome1"));
+        t1.getUsers().add(u);
 
         tenants.add(t1);
 
@@ -61,6 +102,7 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
         Tenant t2 = new Tenant();
         t2.setName("Hiinoono-2");
+        t2.setJoined(now());
 
         tenants.add(t2);
 
@@ -69,7 +111,26 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
     @Override
     public synchronized Stream<Tenant> getTenants() {
-        return tenants.stream();
+
+        // Return copy to simulate ZK implementation.
+        try {
+
+            ByteArrayOutputStream mem = new ByteArrayOutputStream();
+            Marshaller marshaller = jc.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            marshaller.marshal(tenants, mem);
+
+            Unmarshaller um = jc.createUnmarshaller();
+            StringReader reader = new StringReader(mem.toString());
+            List<Tenant> _tenants = (List<Tenant>) um.unmarshal(reader);
+
+            return _tenants.stream();
+
+        } catch (JAXBException ex) {
+            LOG.error(ex.getLocalizedMessage(), ex);
+            return Collections.EMPTY_LIST.stream();
+        }
+
     }
 
 
@@ -77,9 +138,14 @@ public class UnitTestPersistenceManager implements PersistenceManager {
     public synchronized Optional<Tenant> getTenantByName(String name) {
 
         Optional<Tenant> tenant
-                = getTenants().filter(
+                = tenants.stream().filter(
                         t -> t.getName().equals(name)).findFirst();
 
+        if (tenant.isPresent()) {
+            LOG.debug("Found: " + name);
+        } else {
+            LOG.debug("Not Found: " + name);
+        }
         return tenant;
     }
 
@@ -93,31 +159,24 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
     @Override
     public synchronized String getHash(String tenant, String username) {
-        return hash(tenant + username + "welcome1");
-    }
+        Optional<Tenant> t = getTenantByName(tenant);
 
+        if (t.isPresent()) {
+            Optional<User> user = t.get().getUsers().stream()
+                    .filter(u -> u.getName().equals(username))
+                    .findFirst();
 
-    @Override
-    public synchronized String hash(String str) {
-
-        try {
-
-            MessageDigest md = MessageDigest.getInstance("SHA1");
-            md.reset();
-            md.update(str.getBytes("UTF-8"));
-            byte[] digest = md.digest();
-
-            String hexStr = "";
-            for (int i = 0; i < digest.length; i++) {
-                hexStr += Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1);
+            if (user.isPresent()) {
+                // "Password" in this context is hash 
+                // of tenant, username and password
+                LOG.info("Found: " + user.get().getPassword());
+                return user.get().getPassword();
             }
-            return hexStr;
-
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
         }
 
-        return null;
+        // No possible match
+        LOG.info("No user found: " + tenant + "/" + username);
+        return UUID.randomUUID().toString();
     }
 
 
@@ -145,7 +204,23 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
     @Override
     public void persist(Object obj) {
-        // Not really needed here since all objects are in memory.
+        if (obj instanceof Tenant) {
+            Tenant t = (Tenant) obj;
+            // Delete previous version if it exists.
+            deleteTenant(t.getName());
+            tenants.add(t);
+        } else {
+            //To change body of generated methods, choose Tools | Templates.
+            Logger.getLogger(getClass().getName()).severe("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported yet.:    "
+                    + obj.getClass());
+        }
+    }
+
+
+    @Override
+    public String hash(String string) {
+        return Utils.hash(string);
     }
 
 
