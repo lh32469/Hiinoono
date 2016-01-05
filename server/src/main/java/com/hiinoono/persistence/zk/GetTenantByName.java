@@ -48,7 +48,7 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
             = HystrixCommandProperties.Setter().withCircuitBreakerEnabled(false);
 
     final static private org.slf4j.Logger LOG
-            = LoggerFactory.getLogger(ZooKeeperPersistenceManager.class);
+            = LoggerFactory.getLogger(GetTenantByName.class);
 
 
     static {
