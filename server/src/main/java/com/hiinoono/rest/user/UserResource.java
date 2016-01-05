@@ -1,11 +1,11 @@
 package com.hiinoono.rest.user;
 
+import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +23,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
 import org.slf4j.LoggerFactory;
 
 
@@ -49,11 +46,12 @@ public class UserResource {
 
 
     @POST
-    @Consumes(MediaType.APPLICATION_XML)
+    @Path("add")
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     @Produces(MediaType.TEXT_PLAIN)
     @HiinoonoRolesAllowed(roles = {Roles.T_ADMIN},
             message = "You are not permitted to add users.")
-    public Response addUser(User u) throws DatatypeConfigurationException {
+    public Response addUser(User u) {
         LOG.info(u.getName());
 
         final String tenantName = u.getTenant();
@@ -81,8 +79,8 @@ public class UserResource {
         }
 
         String password = UUID.randomUUID().toString().substring(28);
-        u.setJoined(now());
-        u.setPassword(pm.hash(u.getTenant() + u.getName() + password));
+        u.setJoined(Utils.now());
+        u.setPassword(Utils.hash(u.getTenant() + u.getName() + password));
         existingUsers.add(u);
 
         pm.persist(t.get());
@@ -132,19 +130,6 @@ public class UserResource {
         pm.persist(t);
 
         return Response.ok().build();
-    }
-
-
-    /**
-     * Get current date and time.
-     *
-     * @return
-     * @throws DatatypeConfigurationException
-     */
-    XMLGregorianCalendar now() throws DatatypeConfigurationException {
-        GregorianCalendar date = new GregorianCalendar();
-        DatatypeFactory dtf = DatatypeFactory.newInstance();
-        return dtf.newXMLGregorianCalendar(date);
     }
 
 
