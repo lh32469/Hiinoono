@@ -1,5 +1,6 @@
 package com.hiinoono.persistence.zk;
 
+import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
@@ -48,8 +49,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     private static JAXBContext jc;
 
-    private ZooKeeper zk;
-
     public static final String TENANTS = "/tenants";
 
     /**
@@ -97,15 +96,19 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     }
 
 
+    /**
+     * ZooKeeper (zk) cannot be a field in case of session timeouts so should be
+     * fetched from ZooKeeperClient whenever needed. Session reconnecting is
+     * handled in ZooKeeperClient.
+     */
     @Inject
     private ZooKeeperClient zooKeeperClient;
 
 
     @PostConstruct
-    void postConstruct() throws KeeperException, InterruptedException,
-            DatatypeConfigurationException {
+    public void postConstruct() throws KeeperException, InterruptedException {
 
-        this.zk = zooKeeperClient.getZookeeper();
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
 
         if (!initialized) {
             System.out.println("Initializing...");
@@ -118,10 +121,10 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             if (zk.exists((TENANTS + "/hiinoono"), null) == null) {
                 Tenant t = new Tenant();
                 t.setName("hiinoono");
-                t.setJoined(now());
+                t.setJoined(Utils.now());
                 User u = new User();
                 u.setName("admin");
-                u.setJoined(now());
+                u.setJoined(Utils.now());
                 u.setPassword(hash("hiinoonoadminWelcome1"));
                 t.getUsers().add(u);
 
@@ -136,6 +139,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public Stream<Tenant> getTenants() {
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
         List<Tenant> tenants = new LinkedList<>();
         try {
             List<String> names = zk.getChildren(TENANTS, false);
@@ -154,7 +158,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     @Override
     public Optional<Tenant> getTenantByName(String name) {
         LOG.info(name);
-
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
         GetTenantByName get = new GetTenantByName(zk, name, key);
         return get.execute();
     }
@@ -170,6 +174,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public void addTenant(Tenant t) {
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
         final String tenantPath = TENANTS + "/" + t.getName();
         try {
             ByteArrayOutputStream mem = new ByteArrayOutputStream();
@@ -191,6 +196,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     @Override
     public void deleteTenant(String tenantName) {
         LOG.info(tenantName);
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
 
         try {
             zk.delete(TENANTS + "/" + tenantName, -1);
