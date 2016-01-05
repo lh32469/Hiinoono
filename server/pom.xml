@@ -157,7 +157,7 @@
 
     <properties>
         <assembly.name>Hs</assembly.name>
-        <jersey.version>2.19</jersey.version>
+        <jersey.version>2.22.1</jersey.version>
         <main.class>com.hiinoono.Server</main.class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
