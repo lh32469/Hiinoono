@@ -105,6 +105,10 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     private ZooKeeperClient zooKeeperClient;
 
 
+    /*
+     * Note that preDestroy annotated methods are not called in this Class
+     * as it is not a Resource.
+     */
     @PostConstruct
     public void postConstruct() throws KeeperException, InterruptedException {
 
