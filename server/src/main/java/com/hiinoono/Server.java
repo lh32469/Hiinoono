@@ -2,8 +2,6 @@ package com.hiinoono;
 
 import com.hiinoono.rest.API;
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;
-import com.sun.net.httpserver.BasicAuthenticator;
-import com.sun.net.httpserver.HttpContext;
 import java.net.URI;
 import javax.ws.rs.ext.RuntimeDelegate;
 import org.glassfish.grizzly.http.server.HttpHandler;
@@ -11,8 +9,6 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.server.ContainerFactory;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -60,7 +56,7 @@ public class Server {
     public static void main(String[] args) throws InterruptedException {
         String port = System.getProperty("port", "8080");
 
-        URI base = URI.create("http://localhost:" + port);
+        URI base = URI.create("http://0.0.0.0:" + port);
 
         startServer(base);
         Thread.sleep(Long.MAX_VALUE);
