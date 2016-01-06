@@ -66,14 +66,21 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
      */
     private final ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
-    String key128 = "Bar12345Bar12345"; // 128 bit key
-
-    String key256 = "5A6BE0127FE74038919E0DA921D8EC78"; // 256 bit key
-
-    String key = key256;
-
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ZooKeeperPersistenceManager.class);
+
+    /**
+     * Default 256 bit key for encrypting data.
+     */
+    private static final String DEFAULT_KEY
+            = "5A6BE0127FE74038919E0DA921D8EC78";
+
+    /**
+     * Actual 256 bit key for encrypting data. Will eventually be read from a
+     * file only readable by root on the server at startup.
+     */
+    private static final byte[] key
+            = System.getProperty("KEY", DEFAULT_KEY).getBytes();
 
 
     static {
@@ -282,7 +289,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     byte[] encrypt(byte[] clear) throws GeneralSecurityException {
 
         // Create key and cipher
-        Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+        Key aesKey = new SecretKeySpec(key, "AES");
         Cipher cipher = Cipher.getInstance("AES");
 
         // encrypt the data
@@ -295,7 +302,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     byte[] decrypt(byte[] encrypted) throws GeneralSecurityException {
 
         // Create key and cipher
-        Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+        Key aesKey = new SecretKeySpec(key, "AES");
         Cipher cipher = Cipher.getInstance("AES");
 
         // decrypt the data

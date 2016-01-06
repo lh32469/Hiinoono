@@ -36,7 +36,7 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
 
     private final String name;
 
-    private final String key;
+    private final byte[] key;
 
     private static final HystrixCommandGroupKey GROUP_KEY
             = HystrixCommandGroupKey.Factory.asKey("ZK-Persistence");
@@ -71,10 +71,10 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
      * Get the named Tenant from ZooKeeper using the decryption key provided.
      *
      * @param zk
-     * @param name  Tenant name. 
+     * @param name Tenant name.
      * @param key Key used to initially encrypt the Tenant.
      */
-    public GetTenantByName(ZooKeeper zk, String name, String key) {
+    public GetTenantByName(ZooKeeper zk, String name, byte[] key) {
         super(Setter
                 .withGroupKey(GROUP_KEY)
                 .andCommandPropertiesDefaults(CB_DISABLED)
@@ -106,7 +106,7 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
     byte[] decrypt(byte[] encrypted) throws GeneralSecurityException {
 
         // Create key and cipher
-        Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+        Key aesKey = new SecretKeySpec(key, "AES");
         Cipher cipher = Cipher.getInstance("AES");
 
         // decrypt the data
