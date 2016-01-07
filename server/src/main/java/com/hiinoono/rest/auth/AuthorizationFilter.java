@@ -68,15 +68,10 @@ public class AuthorizationFilter implements ContainerRequestFilter {
             abort(ctxt);
             return;
         }
-        if (login.startsWith("/")) {
-            login = login.replaceFirst("/", "");
-        }
 
-        if (login.endsWith("/")) {
-            login = login.substring(0, login.length() - 1);
-        }
+        login = login.replaceAll("/", " ").trim();
 
-        values = login.split("/");
+        values = login.split(" ");
         if (values.length < 2) {
             LOG.info("Invalid syntax for login:  " + login);
             abort(ctxt);
