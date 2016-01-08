@@ -1,5 +1,7 @@
 package com.hiinoono.rest;
 
+import com.hiinoono.os.VirtualMachineDriver;
+import com.hiinoono.os.mock.MockVirtualMachineDriver;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.persistence.UnitTestPersistenceManager;
 import com.hiinoono.persistence.zk.ZooKeeperPersistenceManager;
@@ -12,6 +14,7 @@ import com.hiinoono.rest.node.NodeResource;
 import com.hiinoono.rest.site.SiteResource;
 import com.hiinoono.rest.tenant.TenantResource;
 import com.hiinoono.rest.user.UserResource;
+import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.filter.LoggingFilter;
@@ -33,6 +36,7 @@ public class API extends ResourceConfig {
         register(NodeResource.class);
         register(TenantResource.class);
         register(UserResource.class);
+        register(VirtualMachineResource.class);
         //register(RolesAllowedDynamicFeature.class);
         register(HiinoonoRolesFeature.class);
         register(AuthorizationFilter.class);
@@ -67,13 +71,17 @@ public class API extends ResourceConfig {
 
             String zooKeepers = System.getProperty("zooKeepers");
 
+            // Only Mock availble currently
+            bind(MockVirtualMachineDriver.class)
+                    .to(VirtualMachineDriver.class);
+
             if (zooKeepers == null) {
                 bind(new UnitTestPersistenceManager())
                         .to(PersistenceManager.class);
             } else {
                 try {
                     bind(new ZooKeeperClient(zooKeepers, "Welcome1"));
-                    bindAsContract(ZooKeeperPersistenceManager.class)
+                    bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
                 } catch (IOException ex) {
                     System.err.println(ex.getLocalizedMessage());
