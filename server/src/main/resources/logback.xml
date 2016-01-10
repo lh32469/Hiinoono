@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  
+    <appender name="STDOUT" 
+              class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+            <!-- this quadruples logging throughput -->
+            <immediateFlush>true</immediateFlush>
+        </encoder> 
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>   
+    
+    <appender name="Resources" 
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/tmp/H-Resources.log</file>
+       
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/var/tmp/H-Resource.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender> 
+    
+    <appender name="Root" 
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/tmp/H-Root.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/var/tmp/H-Root.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender> 
+ 
+    <logger name="com.hiinoono.rest" level="DEBUG">
+        <appender-ref ref="Resources" />
+    </logger>
+    
+    <root level="INFO">
+        <appender-ref ref="Root" />
+    </root>
+
+</configuration>
