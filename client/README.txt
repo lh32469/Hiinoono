@@ -6,8 +6,10 @@ To build and run the client:
 
    $ mvn clean assembly:assembly
 
-Set the user and password to default Hiinoono Admin User:
+Set the service to applicable host (defaults to localhost) and the 
+user and password to default Hiinoono Admin User:
 
+   $ export HIINOONO_SERVICE=http://hostname.domain/api
    $ export HIINOONO_USER=/hiinoono/admin
    $ export HIINOONO_PASSWORD=Welcome1
 
