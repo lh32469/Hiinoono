@@ -68,6 +68,8 @@ public class Client {
 
     private static final String CLIENT = "HiinoonoClient";
 
+    private static final String API = "HIINOONO_SERVICE";
+
     private static final String USER = "HIINOONO_USER";
 
     private static final String PASS = "HIINOONO_PASSWORD";
@@ -108,6 +110,10 @@ public class Client {
         }
 
         String svc = "http://localhost:8080/api";
+
+        if (System.getenv(API) != null) {
+            svc = System.getenv(API);
+        }
 
         if (cmd.hasOption(SERVICE)) {
             svc = cmd.getOptionValue(SERVICE);
@@ -319,7 +325,8 @@ public class Client {
                 .hasArg()
                 .argName("http://...")
                 .longOpt(SERVICE)
-                .desc("Hiinoono Service API URL.")
+                .desc("Hiinoono Service API URL or set " + API
+                        + " environment variable")
                 .build();
         options.addOption(service);
 
@@ -397,7 +404,7 @@ public class Client {
             throw new WebApplicationException(response);
         } else {
             // Display the new password
-            LOG.info("New Passord: " + response.readEntity(String.class));
+            LOG.info(response.readEntity(String.class));
         }
 
     }
@@ -426,7 +433,7 @@ public class Client {
             throw new WebApplicationException(response);
         } else {
             // Display the new password
-            LOG.info("New Passord: " + response.readEntity(String.class));
+            LOG.info(response.readEntity(String.class));
         }
     }
 
