@@ -18,9 +18,11 @@ import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.filter.LoggingFilter;
+import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.message.MessageProperties;
 import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.server.wadl.WadlFeature;
 
 
@@ -51,6 +53,8 @@ public class API extends ResourceConfig {
         }
         register(WadlFeature.class);
         register(TimingFilter.class);
+        register(GZipEncoder.class);
+        register(EncodingFilter.class);
 
         MoxyJsonConfig config = new MoxyJsonConfig();
         config.setFormattedOutput(true);
