@@ -11,19 +11,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.Scanner;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.xml.bind.JAXBElement;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.namespace.QName;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -69,6 +61,8 @@ public class Client {
     private static final String DELETE_TENANT = "deleteTenant";
 
     private static final String DELETE_USER = "deleteUser";
+
+    private static final String SAMPLE_VM = "sampleVm";
 
     private static final String ADD_VM = "addVm";
 
@@ -218,6 +212,8 @@ public class Client {
                 addUser(cmd, c, svc);
             } else if (cmd.hasOption(DELETE_USER)) {
                 deleteUser(cmd, c, svc);
+            } else if (cmd.hasOption(SAMPLE_VM)) {
+                sampleVm(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -229,8 +225,6 @@ public class Client {
             }
         } catch (ProcessingException ex) {
             LOG.error("Invalid Hiinoono Service API URL.");
-            LOG.error(ex.getLocalizedMessage());
-        } catch (DatatypeConfigurationException ex) {
             LOG.error(ex.getLocalizedMessage());
         }
 
@@ -369,28 +363,41 @@ public class Client {
                 .build();
         options.addOption(addVm);
 
+        Option sampleVm = Option.builder()
+                .hasArgs()
+                .argName("xml|json")
+                .longOpt(SAMPLE_VM)
+                .desc("Display Sample Virtual Machine.")
+                .build();
+        options.addOption(sampleVm);
+
         return options;
     }
 
 
     private static void addTenant(CommandLine cmd,
             javax.ws.rs.client.Client c,
-            String svc) throws DatatypeConfigurationException {
+            String svc) {
 
         String name = cmd.getOptionValue(ADD_TENANT);
-        HClient.Tenant t = HClient.tenant(c, URI.create(svc));
+
+        HClient.Tenant.Add add = HClient.tenant(c, URI.create(svc)).add();
 
         Tenant newTenant = new Tenant();
         newTenant.setName(name);
 
-        QName qname = new QName("tenant");
-        JAXBElement input = new JAXBElement(qname, Tenant.class, newTenant);
-        Response response = t.postXmlAs(input, Response.class);
+        /* 
+         * Use the JSON option since the XML/JAXB option fails since 
+         * when the WADL is compiled the @XmlRootElement(name = "tenant")
+         * doesn't get added to the generated class.
+         */
+        Response response = add.postJsonAsTextPlain(newTenant, Response.class);
 
         if (response.getStatus() >= 400) {
             throw new WebApplicationException(response);
         } else {
-            LOG.info(response.readEntity(String.class));
+            // Display the new password
+            LOG.info("New Passord: " + response.readEntity(String.class));
         }
 
     }
@@ -398,25 +405,28 @@ public class Client {
 
     private static void addUser(CommandLine cmd,
             javax.ws.rs.client.Client c,
-            String svc) throws DatatypeConfigurationException {
+            String svc) {
 
         String newUserName = cmd.getOptionValue(ADD_USER);
-        HClient.User u = HClient.user(c, URI.create(svc));
+        HClient.User.Add add = HClient.user(c, URI.create(svc)).add();
 
         User _user = new User();
         // Set Tenant name the same as logged-in User.
         _user.setTenant(user.getTenant());
         _user.setName(newUserName);
 
-        // QName qname = new QName("http://jaxb.hiinoono.com", "user");
-        QName qname = new QName("user");
-        JAXBElement input = new JAXBElement(qname, User.class, _user);
-        Response response = u.postXmlAsTextPlain(input, Response.class);
+        /* 
+         * Use the JSON option since the XML/JAXB option fails since 
+         * when the WADL is compiled the @XmlRootElement(name = "user")
+         * doesn't get added to the generated class.
+         */
+        Response response = add.postJsonAsTextPlain(_user, Response.class);
 
         if (response.getStatus() >= 400) {
             throw new WebApplicationException(response);
         } else {
-            LOG.info(response.readEntity(String.class));
+            // Display the new password
+            LOG.info("New Passord: " + response.readEntity(String.class));
         }
     }
 
@@ -449,6 +459,29 @@ public class Client {
 
         if (response.getStatus() >= 400) {
             throw new WebApplicationException(response);
+        }
+
+    }
+
+
+    private static void sampleVm(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String format = cmd.getOptionValue(SAMPLE_VM);
+        HClient.Vm vm = HClient.vm(c, URI.create(svc));
+        Response response;
+
+        if ("xml".equalsIgnoreCase(format)) {
+            response = vm.sample().getAsXml(Response.class);
+        } else {
+            response = vm.sample().getAsJson(Response.class);
+        }
+
+        if (response.getStatus() >= 400) {
+            throw new WebApplicationException(response);
+        } else {
+            System.out.println("\n" + response.readEntity(String.class));
         }
 
     }
