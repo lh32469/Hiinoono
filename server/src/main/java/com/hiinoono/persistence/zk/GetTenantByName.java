@@ -5,6 +5,7 @@ import static com.hiinoono.persistence.zk.ZooKeeperPersistenceManager.TENANTS;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
+import com.netflix.hystrix.HystrixThreadPoolProperties;
 import java.io.StringReader;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -45,7 +46,15 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
      * Monitor failures but don't currently open CircuitBreaker for DDoS attacks
      */
     private static final HystrixCommandProperties.Setter CB_DISABLED
-            = HystrixCommandProperties.Setter().withCircuitBreakerEnabled(false);
+            = HystrixCommandProperties.Setter()
+            .withExecutionIsolationSemaphoreMaxConcurrentRequests(100)
+            .withExecutionTimeoutInMilliseconds(5000)
+            .withCircuitBreakerEnabled(false);
+
+    private static final HystrixThreadPoolProperties.Setter THREAD_PROPERTIES
+            = HystrixThreadPoolProperties.Setter()
+            .withQueueSizeRejectionThreshold(10000)
+            .withMaxQueueSize(10000);
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(GetTenantByName.class);
@@ -77,6 +86,7 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
     public GetTenantByName(ZooKeeper zk, String name, byte[] key) {
         super(Setter
                 .withGroupKey(GROUP_KEY)
+                .andThreadPoolPropertiesDefaults(THREAD_PROPERTIES)
                 .andCommandPropertiesDefaults(CB_DISABLED)
         );
 

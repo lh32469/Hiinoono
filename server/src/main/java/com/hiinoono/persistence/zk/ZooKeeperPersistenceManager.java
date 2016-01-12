@@ -15,13 +15,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javafx.concurrent.Task;
 import javax.annotation.PostConstruct;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -117,7 +126,8 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
      * as it is not a Resource.
      */
     @PostConstruct
-    public void postConstruct() throws KeeperException, InterruptedException {
+    public void postConstruct() throws KeeperException,
+            InterruptedException, GeneralSecurityException {
 
         ZooKeeper zk = zooKeeperClient.getZookeeper();
 
@@ -127,6 +137,16 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             if (zk.exists(TENANTS, null) == null) {
                 zk.create(TENANTS, "Initialized".getBytes(),
                         acl, CreateMode.PERSISTENT);
+            }
+
+            try {
+                encrypt("Test encryption key".getBytes());
+            } catch (GeneralSecurityException ex) {
+                LOG.error(ex.getLocalizedMessage());
+                System.err.println("\n\tError with encryption key "
+                        + "provided: '\n\t\t" + ex.getLocalizedMessage()
+                        + "'\n\n");
+                throw ex;
             }
 
             if (zk.exists((TENANTS + "/hiinoono"), null) == null) {
@@ -155,11 +175,72 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         try {
             List<String> names = zk.getChildren(TENANTS, false);
             LOG.info(names.toString());
+
+//            final ForkJoinPool pool = new ForkJoinPool(10);
+//            final List<ForkJoinTask<Optional<Tenant>>> q = new LinkedList<>();
+//
+//            names.stream().forEach((String name) -> {
+//                ForkJoinTask<Optional<Tenant>> task
+//                        = pool.submit(() -> getTenantByName(name));
+//                q.add(task);
+//            });
+//
+//            pool.shutdown();
+//            pool.awaitTermination(10, TimeUnit.SECONDS);
+//
+//            for (ForkJoinTask<Optional<Tenant>> task : q) {
+//                Optional<Tenant> optional = task.get();
+//                if (optional.isPresent()) {
+//                    tenants.add(optional.get());
+//                }
+//            }
+//            
+//            
+            // Submit requests to queue.  This implemsntation is slightly 
+            // faster than the ForkJoinPool method above and in addition
+            // to being simpler it allows for thread/queue tuning in the
+            // HystrixCommand class itself in case it is used elsewhere.
+            List<Future<Optional<Tenant>>> queue = new LinkedList<>();
+
             for (String name : names) {
-                tenants.add(getTenantByName(name).get());
+                queue.add(getTenantByNameQueued(name));
             }
+
+            // Gather the results.  This implementation is just as fast
+            // and simpler than the gather results implementation below.
+            for (Future<Optional<Tenant>> tenant : queue) {
+                Optional<Tenant> optional = tenant.get();
+                if (optional.isPresent()) {
+                    tenants.add(optional.get());
+                }
+            }
+
+            // Gather the results.
+//            while (!queue.isEmpty()) {
+//                Iterator<Future<Optional<Tenant>>> iter = queue.iterator();
+//                while (iter.hasNext()) {
+//                    Future<Optional<Tenant>> future = iter.next();
+//                    if (future.isDone()) {
+//                        iter.remove();
+//                        Optional<Tenant> optional = future.get();
+//                        if (optional.isPresent()) {
+//                            tenants.add(optional.get());
+//                        }
+//                    }
+//                }
+//            }
+//
+//
+//
+            // Slowest implementation.  Sequential processing.
+//            for (String name : names) {
+//                tenants.add(getTenantByName(name).get());
+//            }
+//
+            LOG.info("Tenants count: " + tenants.size());
             return tenants.stream();
-        } catch (KeeperException | InterruptedException ex) {
+        } catch (KeeperException |
+                InterruptedException | ExecutionException ex) {
             LOG.error(ex.getLocalizedMessage(), ex);
             return Collections.EMPTY_LIST.stream();
         }
@@ -172,6 +253,14 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         ZooKeeper zk = zooKeeperClient.getZookeeper();
         GetTenantByName get = new GetTenantByName(zk, name, key);
         return get.execute();
+    }
+
+
+    public Future<Optional<Tenant>> getTenantByNameQueued(String name) {
+        LOG.info(name);
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
+        GetTenantByName get = new GetTenantByName(zk, name, key);
+        return get.queue();
     }
 
 
