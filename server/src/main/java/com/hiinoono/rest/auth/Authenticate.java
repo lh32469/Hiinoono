@@ -27,7 +27,9 @@ public class Authenticate extends HystrixCommand<Boolean> {
      * Monitor failures but don't currently open CircuitBreaker for DDoS attacks
      */
     private static final HystrixCommandProperties.Setter CB_DISABLED
-            = HystrixCommandProperties.Setter().withCircuitBreakerEnabled(false);
+            = HystrixCommandProperties.Setter()
+            .withExecutionTimeoutInMilliseconds(5000)
+            .withCircuitBreakerEnabled(false);
 
 
     public Authenticate(PersistenceManager pm,
