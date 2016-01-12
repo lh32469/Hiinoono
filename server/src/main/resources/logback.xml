@@ -13,17 +13,67 @@
         </filter>
     </appender>   
     
-    <appender name="Resources" 
+    <appender name="Warninngs" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-Resources.log</file>
+        <file>/var/tmp/H-Warnings.log</file>
        
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-Resource.%i.log.zip</fileNamePattern>
+        <rollingPolicy 
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/var/tmp/H-Warnings.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
 
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+        <triggeringPolicy 
+            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender> 
+    
+    <appender name="Resources" 
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/tmp/H-Resources.log</file>
+       
+        <rollingPolicy 
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/var/tmp/H-Resources.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy 
+            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender> 
+    
+    <appender name="Tenant" 
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/tmp/H-Tenant.log</file>
+       
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/var/tmp/H-Tenant.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy 
+            fclass="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <maxFileSize>5MB</maxFileSize>
         </triggeringPolicy>
     
@@ -61,8 +111,13 @@
         <appender-ref ref="Resources" />
     </logger>
     
+    <logger name="com.hiinoono.rest.tenant" level="DEBUG">
+        <appender-ref ref="Tenant" />
+    </logger>
+    
     <root level="INFO">
         <appender-ref ref="Root" />
+        <appender-ref ref="Warninngs" />
     </root>
 
 </configuration>
