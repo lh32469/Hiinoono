@@ -277,7 +277,8 @@ public class Client {
                 System.out.printf(format,
                         tenant.getName(), tenant.getJoined());
             }
-            System.out.println("");
+            System.out.println("\nTotal: "
+                    + tenants.getTenant().size() + "\n");
 
         } else if (type.equalsIgnoreCase(NODES)) {
             HClient.Node t = HClient.node(c, URI.create(svc));
