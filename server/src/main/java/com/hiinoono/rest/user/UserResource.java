@@ -3,6 +3,7 @@ package com.hiinoono.rest.user;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
+import com.hiinoono.jaxb.Users;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
@@ -85,6 +86,36 @@ public class UserResource {
 
         pm.persist(t.get());
         return Response.ok("Password: " + password).build();
+    }
+
+
+    /**
+     * Only the Tenant Admin can list the Users in that tenancy.
+     *
+     * @return
+     */
+    @GET
+    @Path("list")
+    @HiinoonoRolesAllowed(roles = {Roles.T_ADMIN},
+            message = "You are not permitted to list users.")
+    public Users list() {
+
+        // Principal name is tenant/user
+        String principalName = sc.getUserPrincipal().getName();
+        LOG.info("Principal Name: " + principalName);
+
+        final String tenantName = principalName.split("/")[0];
+        LOG.info(tenantName);
+
+        // Tenant must exist since it's authenticated.
+        Tenant t = pm.getTenantByName(tenantName).get();
+        t.getUsers().stream().forEach((user) -> {
+            user.setPassword("***");
+        });
+        Users users = new Users();
+        users.getUsers().addAll(t.getUsers());
+
+        return users;
     }
 
 

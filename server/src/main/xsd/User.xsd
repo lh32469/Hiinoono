@@ -36,5 +36,21 @@
                         type="xs:string"/>
         </xs:sequence>  
     </xs:complexType>
+    
+      
+    <!-- 
+    Wrapper element since Jersey default WADL generator only generates 
+    a User for a @GET method that returns List<User>
+    -->
+    <xs:element name="users" type="users" />
+    
+    <xs:complexType name="users">
+        <xs:sequence>
+            <xs:element name="user"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="user"/>
+        </xs:sequence>  
+    </xs:complexType>
  
 </xs:schema>
