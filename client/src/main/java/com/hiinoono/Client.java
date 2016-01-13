@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import javax.ws.rs.ProcessingException;
@@ -47,6 +48,8 @@ public class Client {
     private static final String TENANTS = "tenants";
 
     private static final String NODES = "nodes";
+
+    private static final String USERS = "users";
 
     private static final String PROXY = "proxy";
 
@@ -286,6 +289,17 @@ public class Client {
             System.out.println("");
             for (Node node : nodes.getNode()) {
                 System.out.println(node.getId() + "  " + node.getHostname());
+            }
+            System.out.println("");
+
+        } else if (type.equalsIgnoreCase(USERS)) {
+            HClient.User u = HClient.user(c, URI.create(svc));
+            List<User> users = u.list().getAsUsers().getUser();
+            final String format = "%-15s%-25s\n";
+            System.out.println("");
+            for (User _user : users) {
+                System.out.printf(format,
+                        _user.getName(), _user.getJoined());
             }
             System.out.println("");
 
