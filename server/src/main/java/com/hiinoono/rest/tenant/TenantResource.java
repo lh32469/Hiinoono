@@ -95,6 +95,7 @@ public class TenantResource {
         t.getUsers().clear();
         User u = new User();
         u.setName("admin");
+        u.setJoined(Utils.now());
         String password = UUID.randomUUID().toString().substring(28);
         u.setPassword(pm.hash(t.getName() + "admin" + password));
         t.getUsers().add(u);
