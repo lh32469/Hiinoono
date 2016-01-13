@@ -196,7 +196,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 //            }
 //            
 //            
-            // Submit requests to queue.  This implemsntation is slightly 
+            // Submit requests to queue.  This implementation is slightly 
             // faster than the ForkJoinPool method above and in addition
             // to being simpler it allows for thread/queue tuning in the
             // HystrixCommand class itself in case it is used elsewhere.
