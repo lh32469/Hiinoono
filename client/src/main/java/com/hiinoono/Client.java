@@ -10,6 +10,9 @@ import com.hiinoono.rest.api.model.HClient;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.text.Format;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
@@ -17,6 +20,7 @@ import java.util.Scanner;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -38,6 +42,12 @@ import org.glassfish.jersey.message.GZipEncoder;
  * @author Lyle T Harris
  */
 public class Client {
+
+    /**
+     * Format for dates presented to the user.
+     */
+    private static final Format DTF
+            = DateTimeFormatter.RFC_1123_DATE_TIME.toFormat();
 
     private static final String LIST = "list";
 
@@ -277,8 +287,11 @@ public class Client {
             System.out.printf(format,
                     "Tenant", "Joined");
             for (Tenant tenant : tenants.getTenant()) {
+                XMLGregorianCalendar joined = tenant.getJoined();
+                ZonedDateTime zdt
+                        = joined.toGregorianCalendar().toZonedDateTime();
                 System.out.printf(format,
-                        tenant.getName(), tenant.getJoined());
+                        tenant.getName(), DTF.format(zdt));
             }
             System.out.println("\nTotal: "
                     + tenants.getTenant().size() + "\n");
@@ -296,10 +309,14 @@ public class Client {
             HClient.User u = HClient.user(c, URI.create(svc));
             List<User> users = u.list().getAsUsers().getUser();
             final String format = "%-15s%-25s\n";
+
             System.out.println("");
             for (User _user : users) {
+                XMLGregorianCalendar joined = _user.getJoined();
+                ZonedDateTime zdt
+                        = joined.toGregorianCalendar().toZonedDateTime();
                 System.out.printf(format,
-                        _user.getName(), _user.getJoined());
+                        _user.getName(), DTF.format(zdt));
             }
             System.out.println("");
 
