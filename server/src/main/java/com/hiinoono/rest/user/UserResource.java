@@ -102,10 +102,10 @@ public class UserResource {
 
         // Principal name is tenant/user
         String principalName = sc.getUserPrincipal().getName();
-        LOG.info("Principal Name: " + principalName);
+        LOG.trace("Principal Name: " + principalName);
 
         final String tenantName = principalName.split("/")[0];
-        LOG.info(tenantName);
+        LOG.debug(tenantName);
 
         // Tenant must exist since it's authenticated.
         Tenant t = pm.getTenantByName(tenantName).get();
@@ -128,10 +128,10 @@ public class UserResource {
 
         // Principal name is tenant/user
         String principalName = sc.getUserPrincipal().getName();
-        LOG.info("Principal Name: " + principalName);
+        LOG.trace("Principal Name: " + principalName);
 
         final String tenantName = principalName.split("/")[0];
-        LOG.info(tenantName + "/" + userName);
+        LOG.debug(tenantName + "/" + userName);
 
         // Make sure Tenant names match
         if (!sc.isUserInRole(tenantName + "/admin")) {
