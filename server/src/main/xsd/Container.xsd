@@ -12,55 +12,37 @@
            elementFormDefault="qualified">
   
     <xs:include schemaLocation="States.xsd"/>
+
+    <xs:element name="container" type="container" />
    
-    <xs:element name="VM" type="VM" />
-    
-    <xs:complexType name="VM">
+    <xs:complexType name="container">
         <xs:sequence>
             <xs:element name="name"
                         maxOccurs="1"
-                        type="xs:string"/>   
+                        type="xs:string"/>
+            <xs:element name="template"
+                        maxOccurs="1"
+                        type="xs:string"/>
             <xs:element name="state"
+                        minOccurs="0"
                         maxOccurs="1"
                         type="state"/>
-            <xs:element name="drive"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="cpu"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="smp"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="machineType"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="ram"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="vnc"
-                        maxOccurs="1"
-                        type="xs:string"/>
-            <xs:element name="macaddr"
-                        maxOccurs="1"
-                        type="xs:string"/>
         </xs:sequence>  
     </xs:complexType>
     
     <!-- 
     Wrapper element since Jersey default WADL generator only generates 
-    a VM for a @GET method that returns List<VM>
+    a Container for a @GET method that returns List<Container>
     -->
-    <xs:element name="VMs" type="VMs" />
+    <xs:element name="containers" type="containers" />
     
-    <xs:complexType name="VMs">
+    <xs:complexType name="containers">
         <xs:sequence>
-            <xs:element name="VM"
+            <xs:element name="container"
                         minOccurs="0"
                         maxOccurs="unbounded"
-                        type="VM"/>
+                        type="container"/>
         </xs:sequence>  
     </xs:complexType>
-    
-    
+   
 </xs:schema>
