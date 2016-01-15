@@ -11,6 +11,8 @@
            targetNamespace="http://jaxb.hiinoono.com"
            elementFormDefault="qualified">
   
+    <xs:include schemaLocation="Status.xsd"/>
+    
     <xs:element name="node" type="node" />
    
     <xs:complexType name="node">

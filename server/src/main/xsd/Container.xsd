@@ -12,6 +12,8 @@
            elementFormDefault="qualified">
   
     <xs:include schemaLocation="States.xsd"/>
+    <xs:include schemaLocation="User.xsd"/>
+    <xs:include schemaLocation="Node.xsd"/>
 
     <xs:element name="container" type="container" />
    
