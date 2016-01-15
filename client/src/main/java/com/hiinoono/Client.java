@@ -1,5 +1,6 @@
 package com.hiinoono;
 
+import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
@@ -78,6 +79,8 @@ public class Client {
     private static final String SAMPLE_VM = "sampleVm";
 
     private static final String ADD_VM = "addVm";
+
+    private static final String ADD_CONTAINER = "addContainer";
 
     private static final String CLIENT = "HiinoonoClient";
 
@@ -233,6 +236,8 @@ public class Client {
                 deleteUser(cmd, c, svc);
             } else if (cmd.hasOption(SAMPLE_VM)) {
                 sampleVm(cmd, c, svc);
+            } else if (cmd.hasOption(ADD_CONTAINER)) {
+                addContainer(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -313,10 +318,15 @@ public class Client {
             System.out.println("");
             for (User _user : users) {
                 XMLGregorianCalendar joined = _user.getJoined();
-                ZonedDateTime zdt
-                        = joined.toGregorianCalendar().toZonedDateTime();
-                System.out.printf(format,
-                        _user.getName(), DTF.format(zdt));
+                if (joined != null) {
+                    ZonedDateTime zdt
+                            = joined.toGregorianCalendar().toZonedDateTime();
+                    System.out.printf(format,
+                            _user.getName(), DTF.format(zdt));
+                } else {
+                    System.out.printf(format,
+                            _user.getName(), "Unknown");
+                }
             }
             System.out.println("");
 
@@ -409,6 +419,14 @@ public class Client {
                 .desc("Display Sample Virtual Machine.")
                 .build();
         options.addOption(sampleVm);
+
+        Option addContainer = Option.builder()
+                .hasArgs()
+                .argName("fileName")
+                .longOpt(ADD_CONTAINER)
+                .desc("Add a new Container.")
+                .build();
+        options.addOption(addContainer);
 
         return options;
     }
@@ -522,6 +540,20 @@ public class Client {
         } else {
             System.out.println("\n" + response.readEntity(String.class));
         }
+
+    }
+
+
+    private static void addContainer(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        HClient.Container container = HClient.container(c, URI.create(svc));
+
+        Container testC = new Container();
+        testC.setName("cn-test");
+        testC.setTemplate("ubuntu");
+        container.create().postXmlAsContainer(testC);
 
     }
 

@@ -1,6 +1,8 @@
 package com.hiinoono.rest;
 
+import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.os.VirtualMachineDriver;
+import com.hiinoono.os.linux.LinuxContainerDriver;
 import com.hiinoono.os.mock.MockVirtualMachineDriver;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.persistence.UnitTestPersistenceManager;
@@ -8,6 +10,7 @@ import com.hiinoono.persistence.zk.ZooKeeperPersistenceManager;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
 import com.hiinoono.rest.auth.AuthorizationFilter;
 import com.hiinoono.rest.auth.HiinoonoRolesFeature;
+import com.hiinoono.rest.container.ContainerResource;
 import com.hiinoono.rest.exceptions.ClientErrorExceptionMapper;
 import com.hiinoono.rest.exceptions.DefaultExceptionMapper;
 import com.hiinoono.rest.node.NodeResource;
@@ -39,6 +42,7 @@ public class API extends ResourceConfig {
         register(TenantResource.class);
         register(UserResource.class);
         register(VirtualMachineResource.class);
+        register(ContainerResource.class);
         //register(RolesAllowedDynamicFeature.class);
         register(HiinoonoRolesFeature.class);
         register(AuthorizationFilter.class);
@@ -78,6 +82,9 @@ public class API extends ResourceConfig {
             // Only Mock availble currently
             bind(MockVirtualMachineDriver.class)
                     .to(VirtualMachineDriver.class);
+
+            bind(LinuxContainerDriver.class)
+                    .to(ContainerDriver.class);
 
             if (zooKeepers == null) {
                 bind(new UnitTestPersistenceManager())
