@@ -63,4 +63,13 @@ public class Utils {
     }
 
 
+    /**
+     * Get the Id of this Node.
+     * 
+     * @return 
+     */
+    public static String getNodeId() {
+        // Placeholder
+        return "CDE206F3-90DB-4080-A3D4-3D20BA69B6B5";
+    }
 }
