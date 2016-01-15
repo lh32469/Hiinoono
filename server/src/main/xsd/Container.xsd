@@ -23,8 +23,12 @@
             <xs:element name="template"
                         maxOccurs="1"
                         type="xs:string"/>
+            <xs:element name="owner"
+                        minOccurs="1"
+                        maxOccurs="1"
+                        type="user"/>
             <xs:element name="state"
-                        minOccurs="0"
+                        minOccurs="1"
                         maxOccurs="1"
                         type="state"/>
         </xs:sequence>  
