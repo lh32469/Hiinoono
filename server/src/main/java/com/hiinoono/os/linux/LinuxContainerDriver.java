@@ -3,12 +3,14 @@ package com.hiinoono.os.linux;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.os.ContainerDriver;
+import com.hiinoono.os.mock.MockContainerDriver;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -17,9 +19,15 @@ import java.util.List;
  */
 public class LinuxContainerDriver implements ContainerDriver {
 
+    final static private org.slf4j.Logger LOG
+            = LoggerFactory.getLogger(LinuxContainerDriver.class);
+
+
     @Override
     public synchronized Container create(Container container) throws
             IOException {
+
+        LOG.info(container.getName() + " -> " + container.getTemplate());
 
         List<String> command = new LinkedList<>();
         command.add("lxc-create");

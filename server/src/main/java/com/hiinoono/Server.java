@@ -2,7 +2,15 @@ package com.hiinoono;
 
 import com.hiinoono.rest.API;
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
+import java.util.UUID;
 import javax.ws.rs.ext.RuntimeDelegate;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -53,10 +61,32 @@ public class Server {
     }
 
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws
+            InterruptedException, IOException {
+
         String port = System.getProperty("port", "8080");
 
         URI base = URI.create("http://0.0.0.0:" + port);
+
+        final Path nodeIdFile = Paths.get("/etc/hiinoono/nodeId");
+        
+        try {
+            List<String> lines = Files.readAllLines(nodeIdFile);
+            if (lines.size() == 1) {
+                System.setProperty(Utils.NODE_ID_PROPERTY, lines.get(0));
+                System.out.println("Starting Node: " + lines.get(0));
+            } else {
+                System.err.print("\n\nERROR: ");
+                System.err.println(nodeIdFile + " corrupt\n\n");
+                System.exit(1);
+            }
+
+        } catch (NoSuchFileException ex) {
+            String id = UUID.randomUUID().toString() + "\n";
+            Files.write(nodeIdFile, id.getBytes(),
+                    StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE);
+        }
 
         startServer(base);
         Thread.sleep(Long.MAX_VALUE);

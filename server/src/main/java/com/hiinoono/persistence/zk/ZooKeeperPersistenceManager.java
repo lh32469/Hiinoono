@@ -1,6 +1,7 @@
 package com.hiinoono.persistence.zk;
 
 import com.hiinoono.Utils;
+import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
@@ -414,6 +415,18 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         byte[] decrypted = zpm.decrypt(encrypted);
         System.out.println(new String(decrypted));
+    }
+
+
+    @Override
+    public Stream<Container> getContainers() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+
+    @Override
+    public void addContainer(Container t) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 

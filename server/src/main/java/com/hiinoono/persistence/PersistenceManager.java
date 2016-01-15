@@ -1,5 +1,6 @@
 package com.hiinoono.persistence;
 
+import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
 import java.util.Optional;
@@ -23,10 +24,13 @@ public interface PersistenceManager {
     void addTenant(Tenant t);
 
 
+    void addContainer(Container t);
+
+
     void deleteTenant(String tenantName);
 
 
-    /** 
+    /**
      * Get the named Tenant object if it exists.
      */
     Optional<Tenant> getTenantByName(String name);
@@ -38,6 +42,14 @@ public interface PersistenceManager {
      * @return
      */
     Stream<Node> getNodes();
+
+
+    /**
+     * Get Stream of all Containers.
+     *
+     * @return
+     */
+    Stream<Container> getContainers();
 
 
     /**

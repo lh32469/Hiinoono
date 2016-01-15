@@ -2,6 +2,7 @@ package com.hiinoono.persistence;
 
 import com.hiinoono.Utils;
 import static com.hiinoono.Utils.now;
+import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.Tenant;
@@ -37,6 +38,8 @@ public class UnitTestPersistenceManager implements PersistenceManager {
     private static JAXBContext jc;
 
     private final List<Node> nodes = new LinkedList<>();
+
+    private final List<Container> containers = new LinkedList<>();
 
     private final List<Tenant> tenants = new LinkedList<>();
 
@@ -146,7 +149,7 @@ public class UnitTestPersistenceManager implements PersistenceManager {
         } else {
             LOG.debug("Not Found: " + name);
         }
-        
+
         return tenant;
     }
 
@@ -187,7 +190,7 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
 
     @Override
-    public void deleteTenant(String tenantName) {
+    public synchronized void deleteTenant(String tenantName) {
 
         // Nothing faster than an Iterator for removing from List
         Iterator<Tenant> iter = tenants.iterator();
@@ -203,7 +206,7 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
 
     @Override
-    public void persist(Object obj) {
+    public synchronized void persist(Object obj) {
         if (obj instanceof Tenant) {
             Tenant t = (Tenant) obj;
             // Delete previous version if it exists.
@@ -221,6 +224,18 @@ public class UnitTestPersistenceManager implements PersistenceManager {
     @Override
     public String hash(String string) {
         return Utils.hash(string);
+    }
+
+
+    @Override
+    public synchronized Stream<Container> getContainers() {
+        return containers.stream();
+    }
+
+
+    @Override
+    public synchronized void addContainer(Container t) {
+        this.containers.add(t);
     }
 
 
