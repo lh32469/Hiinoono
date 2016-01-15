@@ -122,10 +122,9 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     public void postConstruct() throws KeeperException,
             InterruptedException, GeneralSecurityException {
 
-        ZooKeeper zk = zooKeeperClient.getZookeeper();
-
         if (!initialized) {
             System.out.println("Initializing...");
+            ZooKeeper zk = zooKeeperClient.getZookeeper();
 
             if (zk.exists(TENANTS, null) == null) {
                 zk.create(TENANTS, "Initialized".getBytes(),
