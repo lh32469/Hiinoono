@@ -27,6 +27,10 @@
                         minOccurs="1"
                         maxOccurs="1"
                         type="user"/>
+            <xs:element name="node"
+                        minOccurs="0"
+                        maxOccurs="1"
+                        type="node"/>
             <xs:element name="state"
                         minOccurs="1"
                         maxOccurs="1"
