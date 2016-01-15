@@ -1,8 +1,9 @@
 package com.hiinoono.rest;
 
+import com.hiinoono.managers.ContainerManager;
 import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.os.VirtualMachineDriver;
-import com.hiinoono.os.linux.LinuxContainerDriver;
+import com.hiinoono.os.mock.MockContainerDriver;
 import com.hiinoono.os.mock.MockVirtualMachineDriver;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.persistence.UnitTestPersistenceManager;
@@ -19,6 +20,7 @@ import com.hiinoono.rest.tenant.TenantResource;
 import com.hiinoono.rest.user.UserResource;
 import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
+import org.apache.zookeeper.KeeperException;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.message.GZipEncoder;
@@ -27,6 +29,7 @@ import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.server.wadl.WadlFeature;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -34,6 +37,10 @@ import org.glassfish.jersey.server.wadl.WadlFeature;
  * @author Lyle T Harris
  */
 public class API extends ResourceConfig {
+
+    final static private org.slf4j.Logger LOG
+            = LoggerFactory.getLogger(API.class);
+
 
     public API() {
 
@@ -83,7 +90,7 @@ public class API extends ResourceConfig {
             bind(MockVirtualMachineDriver.class)
                     .to(VirtualMachineDriver.class);
 
-            bind(LinuxContainerDriver.class)
+            bind(MockContainerDriver.class)
                     .to(ContainerDriver.class);
 
             if (zooKeepers == null) {
@@ -91,10 +98,16 @@ public class API extends ResourceConfig {
                         .to(PersistenceManager.class);
             } else {
                 try {
-                    bind(new ZooKeeperClient(zooKeepers, "Welcome1"));
+                    ZooKeeperClient zkc
+                            = new ZooKeeperClient(zooKeepers, "Welcome1");
+                    bind(zkc);
+                    bind(new ContainerManager(zkc));
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
-                } catch (IOException ex) {
+                } catch (IOException |
+                        KeeperException |
+                        InterruptedException ex) {
+                    LOG.error(ex.getLocalizedMessage());
                     System.err.println(ex.getLocalizedMessage());
                     System.exit(1);
                 }
