@@ -1,10 +1,14 @@
 package com.hiinoono;
 
 import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
 import java.util.GregorianCalendar;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -18,6 +22,19 @@ import javax.xml.datatype.XMLGregorianCalendar;
 public class Utils {
 
     public static final String NODE_ID_PROPERTY = "NodeId";
+
+    /**
+     * Default 256 bit key for encrypting data.
+     */
+    private static final String DEFAULT_KEY
+            = "5A6BE0127FE74038919E0DA921D8EC78";
+
+    /**
+     * Actual 256 bit key for encrypting data. Will eventually be read from a
+     * file only readable by root on the server at startup.
+     */
+    private static final byte[] key
+            = System.getProperty("KEY", DEFAULT_KEY).getBytes();
 
 
     /**
@@ -63,6 +80,34 @@ public class Utils {
         }
 
         return formatter.toString();
+    }
+
+
+    public static final byte[] encrypt(byte[] clear) throws
+            GeneralSecurityException {
+
+        // Create key and cipher
+        Key aesKey = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES");
+
+        // encrypt the data
+        cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+        return cipher.doFinal(clear);
+
+    }
+
+
+    public static final byte[] decrypt(byte[] encrypted) throws
+            GeneralSecurityException {
+
+        // Create key and cipher
+        Key aesKey = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES");
+
+        // decrypt the data
+        cipher.init(Cipher.DECRYPT_MODE, aesKey);
+        return cipher.doFinal(encrypted);
+
     }
 
 
