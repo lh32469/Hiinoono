@@ -50,8 +50,8 @@ public class ContainerResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Container create(Container c) throws IOException {
         LOG.info(c.getName() + " => " + c.getTemplate());
-       
-        return driver.create(c);
+        pm.addContainer(c);
+        return c;
     }
 
 
