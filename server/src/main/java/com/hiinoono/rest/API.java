@@ -1,8 +1,8 @@
 package com.hiinoono.rest;
 
-import com.hiinoono.managers.ContainerManager;
 import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.os.VirtualMachineDriver;
+import com.hiinoono.os.container.NodeContainerWatcher;
 import com.hiinoono.os.mock.MockContainerDriver;
 import com.hiinoono.os.mock.MockVirtualMachineDriver;
 import com.hiinoono.persistence.PersistenceManager;
@@ -101,7 +101,7 @@ public class API extends ResourceConfig {
                     ZooKeeperClient zkc
                             = new ZooKeeperClient(zooKeepers, "Welcome1");
                     bind(zkc);
-                    bind(new ContainerManager(zkc));
+                    bind(new NodeContainerWatcher(zkc));
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
                 } catch (IOException |
