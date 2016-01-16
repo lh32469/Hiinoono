@@ -86,11 +86,6 @@ public class TenantResource {
     public Response addTenant(Tenant t) {
         LOG.info(t.getName());
 
-        if (pm.getTenantByName(t.getName()).isPresent()) {
-            throw new NotAcceptableException("Tenant " + t.getName()
-                    + " already exists.");
-        }
-
         // Clear any users provided from Client and add default Admin User.
         t.getUsers().clear();
         User u = new User();
