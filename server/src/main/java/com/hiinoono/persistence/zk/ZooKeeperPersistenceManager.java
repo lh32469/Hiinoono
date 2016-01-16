@@ -3,8 +3,10 @@ package com.hiinoono.persistence.zk;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
+import com.hiinoono.jaxb.State;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
+import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.persistence.PersistenceManager;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -29,6 +31,7 @@ import javax.annotation.PostConstruct;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
+import javax.ws.rs.NotAcceptableException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -37,6 +40,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
@@ -90,6 +94,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         Class[] classes = {
             Node.class,
+            Container.class,
             Tenant.class};
 
         try {
@@ -278,7 +283,9 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             zk.create(tenantPath, encrypt(mem.toByteArray()),
                     acl, CreateMode.PERSISTENT);
             LOG.info("Adding Tenant: " + t.getName() + "\n" + mem);
-
+        } catch (NodeExistsException ex) {
+            throw new NotAcceptableException("Tenant " + t.getName()
+                    + " already exists.");
         } catch (KeeperException | InterruptedException |
                 GeneralSecurityException | JAXBException ex) {
             LOG.error(ex.getLocalizedMessage(), ex);
@@ -381,19 +388,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     }
 
 
-    byte[] decrypt(byte[] encrypted) throws GeneralSecurityException {
-
-        // Create key and cipher
-        Key aesKey = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES");
-
-        // decrypt the data
-        cipher.init(Cipher.DECRYPT_MODE, aesKey);
-        return cipher.doFinal(encrypted);
-
-    }
-
-
     /**
      * Get current date and time.
      *
@@ -413,7 +407,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         byte[] encrypted = zpm.encrypt("Hello World@".getBytes());
 
-        byte[] decrypted = zpm.decrypt(encrypted);
+        byte[] decrypted = Utils.decrypt(encrypted);
         System.out.println(new String(decrypted));
     }
 
@@ -425,8 +419,53 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
 
     @Override
-    public void addContainer(Container t) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void addContainer(Container c) {
+
+        // TODO: Need to check all paths to see if 
+        // this Container already exists.
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+        List<String> nodes;
+
+        try {
+            nodes = zk.getChildren(ContainerConstants.CONTAINERS, null);
+        } catch (KeeperException | InterruptedException ex) {
+            throw new NotAcceptableException(ex.getLocalizedMessage());
+        }
+
+        LOG.info("Known Nodes: " + nodes);
+
+        // Check availablity (Node up?) and utilization and assign a Node
+        // For now, just pick first one.
+        final String nodeID = nodes.get(0);
+
+        final String path = ContainerConstants.CONTAINERS
+                + "/" + nodeID
+                + ContainerConstants.NEW
+                + "/" + c.getName();
+
+        c.setState(State.STOPPED);
+
+        try {
+            ByteArrayOutputStream mem = new ByteArrayOutputStream();
+            Marshaller marshaller = jc.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            marshaller.marshal(c, mem);
+
+            zk.create(path, mem.toByteArray(),
+                    acl, CreateMode.PERSISTENT);
+
+//            zk.create(tenantPath, encrypt(mem.toByteArray()),
+//                    acl, CreateMode.PERSISTENT);
+            LOG.info("Adding Container: " + c.getName() + "\n" + mem);
+
+        } catch (NodeExistsException ex) {
+            throw new NotAcceptableException("Container " + c.getName()
+                    + " already exists.");
+        } catch (KeeperException | InterruptedException |
+                JAXBException ex) {
+            LOG.error(ex.getLocalizedMessage(), ex);
+        }
     }
 
 
