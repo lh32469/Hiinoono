@@ -15,7 +15,9 @@
      
     <xs:simpleType name="state">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="STOPPED"/>  
+            <xs:enumeration value="CREATING"/>
+            <xs:enumeration value="CREATED"/>
+            <xs:enumeration value="STOPPED"/>
             <xs:enumeration value="STARTING"/>  
             <xs:enumeration value="RUNNING"/>  
             <xs:enumeration value="STOPPING"/>  
