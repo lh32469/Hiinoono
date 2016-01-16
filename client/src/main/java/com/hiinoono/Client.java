@@ -548,10 +548,11 @@ public class Client {
             javax.ws.rs.client.Client c,
             String svc) {
 
+        String name = cmd.getOptionValue(ADD_CONTAINER);
         HClient.Container container = HClient.container(c, URI.create(svc));
 
         Container testC = new Container();
-        testC.setName("cn-test");
+        testC.setName(name);
         testC.setTemplate("ubuntu");
         container.create().postXmlAsContainer(testC);
 
