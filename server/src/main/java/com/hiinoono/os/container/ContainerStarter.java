@@ -85,6 +85,7 @@ public class ContainerStarter extends HystrixCommand<Container> {
         // Start and move to /containers/running
         Thread.sleep(15000);  // Simulate starting
         container.setState(State.RUNNING);
+        container.setLastStarted(Utils.now());
 
         // Start and move to /containers/{nodeId}/running
         final String path = ContainerConstants.CONTAINERS
