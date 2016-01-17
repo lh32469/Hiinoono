@@ -105,7 +105,6 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
                 LOG.info("Creating: " + path);
                 zk.create(path, "Initialized".getBytes(),
                         acl, CreateMode.PERSISTENT);
-                zk.getChildren(path, this);
             }
         }
 
@@ -127,74 +126,38 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
         try {
             if (EventType.NodeChildrenChanged.equals(type)) {
-                // Reset Watcher
-                zooKeeperClient.getZookeeper().getChildren(path, this);
 
-                if (path.equals(nodePath + NEW)) {
-                    // New -> Created or Error
-                    createContainer(event);
-                } else if (path.equals(nodePath + CREATED)) {
-                    // Created -> Running or Error
-                    startContainer(event);
+                ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+                // Reset this Watcher
+                List<String> containers = zk.getChildren(path, this);
+                System.out.println("Containers: " + containers);
+
+                for (String c : containers) {
+
+                    Unmarshaller um = jc.createUnmarshaller();
+                    final String cPath = event.getPath() + "/" + c;
+                    String json = new String(zk.getData(cPath, false, null));
+
+                    Container container
+                            = (Container) um.unmarshal(new StringReader(json));
+
+                    if (path.equals(nodePath + NEW)) {
+                        new ContainerCreator(container, zk).queue();
+                        zk.delete(cPath, -1);
+                    } else if (path.equals(nodePath + CREATED)) {
+                        new ContainerStarter(container, zk).queue();
+                        zk.delete(cPath, -1);
+                    }
+
                 }
 
             }
+
         } catch (JAXBException |
                 KeeperException |
                 InterruptedException ex) {
             LOG.error(ex.getLocalizedMessage(), ex);
-        }
-
-    }
-
-
-    void createContainer(WatchedEvent event) throws
-            JAXBException, KeeperException, InterruptedException {
-
-        final ZooKeeper zk = zooKeeperClient.getZookeeper();
-        List<String> _containers = zk.getChildren(event.getPath(), null);
-
-        for (String c : _containers) {
-            Unmarshaller um = jc.createUnmarshaller();
-            final String path = event.getPath() + "/" + c;
-            byte[] data = zk.getData(path, false, null);
-            String json = new String(data);
-            Container container
-                    = (Container) um.unmarshal(new StringReader(json));
-
-            LOG.info(container.getName());
-            System.out.println("Starting: " + container.getName());
-
-            zk.delete(path, -1);
-
-            ContainerCreator hystrix = new ContainerCreator(container, zk);
-            hystrix.queue();
-        }
-
-    }
-
-
-    void startContainer(WatchedEvent event) throws
-            JAXBException, KeeperException, InterruptedException {
-
-        final ZooKeeper zk = zooKeeperClient.getZookeeper();
-        List<String> _containers = zk.getChildren(event.getPath(), null);
-
-        for (String c : _containers) {
-            Unmarshaller um = jc.createUnmarshaller();
-            final String path = event.getPath() + "/" + c;
-            byte[] data = zk.getData(path, false, null);
-            String json = new String(data);
-            Container container
-                    = (Container) um.unmarshal(new StringReader(json));
-
-            LOG.info(container.getName());
-            System.out.println("Starting: " + container.getName());
-
-            zk.delete(path, -1);
-
-            ContainerStarter hystrix = new ContainerStarter(container, zk);
-            hystrix.queue();
         }
 
     }
