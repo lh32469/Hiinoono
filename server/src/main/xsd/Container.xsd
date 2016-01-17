@@ -33,6 +33,15 @@
                         minOccurs="0"
                         maxOccurs="1"
                         type="node"/>
+            <xs:element name="added"
+                        maxOccurs="1"
+                        type="xs:dateTime"/>
+            <xs:element name="lastStarted"
+                        maxOccurs="1"
+                        type="xs:dateTime"/>
+            <xs:element name="lastStopped"
+                        maxOccurs="1"
+                        type="xs:dateTime"/>
             <xs:element name="state"
                         minOccurs="1"
                         maxOccurs="1"
