@@ -2,12 +2,14 @@ package com.hiinoono.os.container;
 
 import com.hiinoono.jaxb.Container;
 import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -54,12 +56,13 @@ public class ContainerUtils {
     }
 
 
+    public static JAXBContext getJAXBContext() {
+        return jc;
+    }
+
+
     /**
      * Store the Container in the given path.
-     *
-     * @param c
-     * @param path
-     * @throws JAXBException
      */
     public static void marshall(ZooKeeper zk, Container c, String path) throws
             JAXBException, KeeperException, InterruptedException {
@@ -70,6 +73,17 @@ public class ContainerUtils {
         m.marshal(c, mem);
         zk.create(path, mem.toByteArray(),
                 acl, CreateMode.PERSISTENT);
+    }
+
+
+    /**
+     * Loads the Container from ZK at the path provided.
+     */
+    public static Container load(ZooKeeper zk, String path) throws
+            JAXBException, KeeperException, InterruptedException {
+        Unmarshaller um = jc.createUnmarshaller();
+        String json = new String(zk.getData(path, false, null));
+        return (Container) um.unmarshal(new StringReader(json));
     }
 
 
