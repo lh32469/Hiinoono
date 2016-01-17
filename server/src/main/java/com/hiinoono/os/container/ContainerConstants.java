@@ -19,28 +19,33 @@ public interface ContainerConstants {
     public static final String CONTAINERS = "/containers";
 
     /**
-     * Sub path/dir for each node where newly assigned containers are placed for
-     * a given node. Total path is /containers/{nodeId}/new
+     * Sub path/dir for each node where newly assigned containers are placed.
+     * Total path is /containers/{nodeId}/new
      */
     public static final String NEW = "/new";
 
     /**
-     * Sub path/dir for each node where newly created containers are placed for
-     * a given node. Total path is /containers/{nodeId}/created
+     * Sub path/dir for each node where newly created containers are placed.
+     * Total path is /containers/{nodeId}/created
      */
     public static final String CREATED = "/created";
 
-    public static final String STARTING = "/starting";
+    /**
+     * Sub path/dir for each node where containers are placed while in the
+     * process of moving from one state to another. Total path iqs
+     * /containers/{nodeId}/transition
+     */
+    public static final String TRANSITIONING = "/transition";
 
     /**
-     * Sub path/dir for each node where running containers are placed for a
-     * given node. Total path is /containers/{nodeId}/running.
+     * Sub path/dir for each node where running containers are placed. Total
+     * path is /containers/{nodeId}/running.
      */
     public static final String RUNNING = "/running";
 
     /**
-     * Sub path/dir for each node where containers that had errors are placed
-     * for a given node. Total path is /containers/{nodeId}/errors.
+     * Sub path/dir for each node where containers that had errors are placed.
+     * Total path is /containers/{nodeId}/errors.
      */
     public static final String ERRORS = "/errors";
 
@@ -51,6 +56,6 @@ public interface ContainerConstants {
     public static final String MGR_NODE = "/ContainerManager";
 
     public static final String[] STATES
-            = {NEW, CREATED, STARTING, RUNNING};
+            = {NEW, CREATED, TRANSITIONING, RUNNING, ERRORS};
 
 }
