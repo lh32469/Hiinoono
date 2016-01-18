@@ -1,6 +1,7 @@
 package com.hiinoono.os.container;
 
 import com.hiinoono.jaxb.Container;
+import com.hiinoono.jaxb.User;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -58,6 +59,25 @@ public class ContainerUtils {
 
     public static JAXBContext getJAXBContext() {
         return jc;
+    }
+
+
+    /**
+     * Get a ZooKeeper friendly, unique Container name made up of Tenant name
+     * plus User name plus actual container name.
+     *
+     * @param container The Container to get name for.
+     * @return ZK friendly name base on Container name and Owner.
+     */
+    public static String getZKname(Container container) {
+        StringBuilder zkName = new StringBuilder();
+        User owner = container.getOwner();
+        zkName.append(container.getName());
+        zkName.append(".");
+        zkName.append(owner.getTenant().replaceAll(" ", "_"));
+        zkName.append(".");
+        zkName.append(owner.getName().replaceAll(" ", "_"));
+        return zkName.toString();
     }
 
 
