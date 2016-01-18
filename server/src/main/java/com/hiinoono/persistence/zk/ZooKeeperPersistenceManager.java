@@ -7,6 +7,7 @@ import com.hiinoono.jaxb.State;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.os.container.ContainerConstants;
+import com.hiinoono.os.container.ContainerUtils;
 import com.hiinoono.os.container.GetContainersForNode;
 import com.hiinoono.persistence.PersistenceManager;
 import java.io.ByteArrayOutputStream;
@@ -27,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.crypto.Cipher;
@@ -416,12 +418,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     @Override
     public Stream<Container> getContainers() {
         List<Container> containers = new LinkedList<>();
-        Container c = new Container();
-        c.setName("cn-00");
-        c.setTemplate("ubuntu");
-        c.setAdded(Utils.now());
-        c.setState(State.RUNNING);
-        containers.add(c);
 
         ZooKeeper zk = zooKeeperClient.getZookeeper();
 
@@ -458,6 +454,19 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         // this Container already exists.
         // Different Tenants/Users should be able to create
         // Containers of the same name.
+        List<Container> dups = getContainers().filter(
+                n -> n.getName().equals(c.getName())
+                && n.getOwner().getTenant().equals(c.getOwner().getTenant())
+                && n.getOwner().getName().equals(c.getOwner().getName())
+        ).collect(Collectors.toList());
+
+        LOG.info("Dups: " + dups);
+
+        if (!dups.isEmpty()) {
+            throw new NotAcceptableException("Container " + c.getName()
+                    + " already exists.");
+        }
+
         ZooKeeper zk = zooKeeperClient.getZookeeper();
 
         List<String> nodes;
@@ -465,7 +474,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         try {
             nodes = zk.getChildren(ContainerConstants.CONTAINERS, null);
         } catch (KeeperException | InterruptedException ex) {
-            throw new NotAcceptableException(ex.getLocalizedMessage());
+            throw new NotAcceptableException(ex.toString());
         }
 
         LOG.info("Known Nodes: " + nodes);
@@ -477,7 +486,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         final String path = ContainerConstants.CONTAINERS
                 + "/" + nodeID
                 + ContainerConstants.NEW
-                + "/" + c.getName();
+                + "/" + ContainerUtils.getZKname(c);
 
         c.setState(State.STOPPED);
         c.setAdded(Utils.now());
@@ -488,19 +497,17 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             marshaller.marshal(c, mem);
 
-            zk.create(path, mem.toByteArray(),
+            zk.create(path, Utils.encrypt2(mem.toByteArray()),
                     acl, CreateMode.PERSISTENT);
 
-//            zk.create(tenantPath, encrypt(mem.toByteArray()),
-//                    acl, CreateMode.PERSISTENT);
             LOG.info("Adding Container: " + c.getName() + "\n" + mem);
 
         } catch (NodeExistsException ex) {
             throw new NotAcceptableException("Container " + c.getName()
                     + " already exists.");
         } catch (KeeperException | InterruptedException |
-                JAXBException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
+                JAXBException | GeneralSecurityException ex) {
+            LOG.error(ex.toString(), ex);
         }
     }
 
