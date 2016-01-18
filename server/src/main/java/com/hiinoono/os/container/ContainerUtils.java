@@ -1,9 +1,11 @@
 package com.hiinoono.os.container;
 
+import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.User;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -85,13 +87,14 @@ public class ContainerUtils {
      * Store the Container in the given path.
      */
     public static void marshall(ZooKeeper zk, Container c, String path) throws
-            JAXBException, KeeperException, InterruptedException {
+            JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
 
         ByteArrayOutputStream mem = new ByteArrayOutputStream();
         Marshaller m = jc.createMarshaller();
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         m.marshal(c, mem);
-        zk.create(path, mem.toByteArray(),
+        zk.create(path, Utils.encrypt2(mem.toByteArray()),
                 acl, CreateMode.PERSISTENT);
     }
 
@@ -100,9 +103,11 @@ public class ContainerUtils {
      * Loads the Container from ZK at the path provided.
      */
     public static Container load(ZooKeeper zk, String path) throws
-            JAXBException, KeeperException, InterruptedException {
+            JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
+
         Unmarshaller um = jc.createUnmarshaller();
-        String json = new String(zk.getData(path, false, null));
+        String json = new String(Utils.decrypt2(zk.getData(path, false, null)));
         return (Container) um.unmarshal(new StringReader(json));
     }
 
