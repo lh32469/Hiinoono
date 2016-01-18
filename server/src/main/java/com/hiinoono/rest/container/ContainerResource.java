@@ -9,6 +9,8 @@ import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -73,6 +75,8 @@ public class ContainerResource {
         LOG.debug(tenantName);
 
         Containers containers = new Containers();
+        List<Container> list = pm.getContainers().collect(Collectors.toList());
+        containers.getContainers().addAll(list);
 
         return containers;
     }
