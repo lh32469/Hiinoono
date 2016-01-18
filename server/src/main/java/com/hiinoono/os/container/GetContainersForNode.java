@@ -1,0 +1,110 @@
+package com.hiinoono.os.container;
+
+import com.netflix.hystrix.HystrixCommand;
+import java.util.List;
+import com.hiinoono.jaxb.Container;
+import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixCommandProperties;
+import com.netflix.hystrix.HystrixThreadPoolProperties;
+import java.util.Collections;
+import java.util.LinkedList;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
+import org.slf4j.LoggerFactory;
+
+
+/**
+ *
+ * @author Lyle T Harris
+ */
+public class GetContainersForNode extends HystrixCommand<List<Container>> {
+
+    private static JAXBContext jc;
+
+    private final ZooKeeper zk;
+
+    private final String path;
+
+    private final byte[] key;
+
+    private static final HystrixCommandGroupKey GROUP_KEY
+            = HystrixCommandGroupKey.Factory.asKey("ZK-Persistence");
+
+    /**
+     * Monitor failures but don't currently open CircuitBreaker
+     */
+    private static final HystrixCommandProperties.Setter CB_DISABLED
+            = HystrixCommandProperties.Setter()
+            .withExecutionIsolationSemaphoreMaxConcurrentRequests(100)
+            .withExecutionTimeoutInMilliseconds(5000)
+            .withCircuitBreakerEnabled(false);
+
+    private static final HystrixThreadPoolProperties.Setter THREAD_PROPERTIES
+            = HystrixThreadPoolProperties.Setter()
+            .withQueueSizeRejectionThreshold(10000)
+            .withMaxQueueSize(10000);
+
+    final static private org.slf4j.Logger LOG
+            = LoggerFactory.getLogger(GetContainersForNode.class);
+
+
+    /**
+     * Get the named Tenant from ZooKeeper using the decryption key provided.
+     *
+     * @param zk
+     * @param path ZK /container/{nodeId} path.
+     * @param key Key used to initially encrypt the Tenant.
+     */
+    public GetContainersForNode(ZooKeeper zk, String path, byte[] key) {
+        super(Setter
+                .withGroupKey(GROUP_KEY)
+                .andThreadPoolPropertiesDefaults(THREAD_PROPERTIES)
+                .andCommandPropertiesDefaults(CB_DISABLED)
+        );
+
+        this.zk = zk;
+        this.path = path;
+        this.key = key;
+
+    }
+
+
+    @Override
+    protected List<Container> run() throws Exception {
+        try {
+            LOG.info(path);
+
+            List<Container> containers = new LinkedList<>();
+            List<String> states = zk.getChildren(path, null);
+
+            for (String state : states) {
+                LOG.info(path + "/" + state);
+
+                List<String> containerNames
+                        = zk.getChildren(path + "/" + state, null);
+                for (String containerName : containerNames) {
+                    String cPath = path + "/" + state + "/" + containerName;
+                    LOG.info(cPath);
+                    containers.add(ContainerUtils.load(zk, cPath));
+                }
+
+            }
+
+            return containers;
+        } catch (KeeperException | InterruptedException | JAXBException ex) {
+            LOG.error(ex.getLocalizedMessage(), ex);
+            throw ex;
+        }
+    }
+
+
+    @Override
+    protected List<Container> getFallback() {
+        LOG.error("Failed");
+        return Collections.EMPTY_LIST;
+    }
+
+
+}
