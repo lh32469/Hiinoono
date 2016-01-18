@@ -6,6 +6,9 @@ import com.hiinoono.jaxb.State;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
+import java.security.GeneralSecurityException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
@@ -52,8 +55,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
         transitionState = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.TRANSITIONING
-                + "/" + container.getName();
-
+                + "/" + ContainerUtils.getZKname(container);
     }
 
 
@@ -76,7 +78,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
         final String created = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.CREATED
-                + "/" + container.getName();
+                + "/" + ContainerUtils.getZKname(container);
 
         ContainerUtils.marshall(zk, container, created);
 
@@ -95,7 +97,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
         final String path = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.ERRORS
-                + "/" + container.getName();
+                + "/" + ContainerUtils.getZKname(container);
 
         try {
 
@@ -104,8 +106,9 @@ public class ContainerCreator extends HystrixCommand<Container> {
 
             ContainerUtils.marshall(zk, container, path);
 
-        } catch (JAXBException | KeeperException | InterruptedException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
+        } catch (JAXBException | KeeperException |
+                GeneralSecurityException | InterruptedException ex) {
+            LOG.error(ex.toString(), ex);
         }
 
         return container;

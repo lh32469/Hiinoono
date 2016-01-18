@@ -7,15 +7,13 @@ import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
-import java.util.ArrayList;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +73,7 @@ public class ContainerStarter extends HystrixCommand<Container> {
         transitionState = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.TRANSITIONING
-                + "/" + container.getName();
+                + "/" + ContainerUtils.getZKname(container);
     }
 
 
@@ -98,7 +96,7 @@ public class ContainerStarter extends HystrixCommand<Container> {
         final String path = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.RUNNING
-                + "/" + container.getName();
+                + "/" + ContainerUtils.getZKname(container);
 
         ContainerUtils.marshall(zk, container, path);
 
@@ -117,7 +115,7 @@ public class ContainerStarter extends HystrixCommand<Container> {
         final String path = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.ERRORS
-                + "/" + container.getName();
+                + "/" + ContainerUtils.getZKname(container);
 
         try {
 
@@ -125,9 +123,10 @@ public class ContainerStarter extends HystrixCommand<Container> {
             zk.delete(transitionState, -1);
 
             ContainerUtils.marshall(zk, container, path);
-            
-        } catch (JAXBException | KeeperException | InterruptedException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
+
+        } catch (JAXBException | KeeperException |
+                GeneralSecurityException | InterruptedException ex) {
+            LOG.error(ex.toString(), ex);
         }
 
         return container;
