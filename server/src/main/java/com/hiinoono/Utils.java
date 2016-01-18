@@ -112,6 +112,26 @@ public class Utils {
 
 
     /**
+     * Temporary for development before switching to actual encryption.
+     */
+    @Deprecated
+    public static final byte[] encrypt2(byte[] clear) throws
+            GeneralSecurityException {
+        return clear;
+    }
+
+
+    /**
+     * Temporary for development before switching to actual encryption.
+     */
+    @Deprecated
+    public static final byte[] decrypt2(byte[] clear) throws
+            GeneralSecurityException {
+        return clear;
+    }
+
+
+    /**
      * Get the Id of this Node.
      *
      * @return
