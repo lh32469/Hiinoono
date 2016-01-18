@@ -17,4 +17,9 @@ public interface Roles {
      */
     String T_ADMIN = "TenantAdmin";
 
+    /**
+     * Role for a non-privileged user.
+     */
+    String USER = "User";
+
 }
