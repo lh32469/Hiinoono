@@ -1,6 +1,7 @@
 package com.hiinoono;
 
 import com.hiinoono.jaxb.Container;
+import com.hiinoono.jaxb.Containers;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
@@ -59,6 +60,8 @@ public class Client {
     private static final String TENANTS = "tenants";
 
     private static final String NODES = "nodes";
+
+    private static final String CONTAINERS = "containers";
 
     private static final String USERS = "users";
 
@@ -326,6 +329,38 @@ public class Client {
                 } else {
                     System.out.printf(format,
                             _user.getName(), "Unknown");
+                }
+            }
+            System.out.println("");
+
+        } else if (type.equalsIgnoreCase(CONTAINERS)) {
+            HClient.Container cont = HClient.container(c, URI.create(svc));
+            Containers containers = cont.list().getAsContainers();
+            final String format = "%-15s%-15s%-15s%-25s\n";
+
+            System.out.println("");
+
+            System.out.printf(format,
+                    "Name",
+                    "Template",
+                    "State",
+                    "Added");
+
+            Format dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat();
+
+            for (Container container : containers.getContainer()) {
+                XMLGregorianCalendar joined = container.getAdded();
+                if (joined != null) {
+                    ZonedDateTime zdt
+                            = joined.toGregorianCalendar().toZonedDateTime();
+                    System.out.printf(format,
+                            container.getName(),
+                            container.getTemplate(),
+                            container.getState(),
+                            dtf.format(zdt));
+                } else {
+                    System.out.printf(format,
+                            container.getName(), "Unknown");
                 }
             }
             System.out.println("");
