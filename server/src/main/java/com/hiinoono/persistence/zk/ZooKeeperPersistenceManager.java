@@ -7,6 +7,7 @@ import com.hiinoono.jaxb.State;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.os.container.ContainerConstants;
+import com.hiinoono.os.container.GetContainersForNode;
 import com.hiinoono.persistence.PersistenceManager;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -414,7 +415,39 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public Stream<Container> getContainers() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        List<Container> containers = new LinkedList<>();
+        Container c = new Container();
+        c.setName("cn-00");
+        c.setTemplate("ubuntu");
+        c.setAdded(Utils.now());
+        c.setState(State.RUNNING);
+        containers.add(c);
+
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+        try {
+            List<String> nodes
+                    = zk.getChildren(ContainerConstants.CONTAINERS, null);
+
+            List<Future<List<Container>>> futures = new LinkedList<>();
+
+            for (String node : nodes) {
+                String path = ContainerConstants.CONTAINERS + "/" + node;
+                futures.add(new GetContainersForNode(zk, path, key).queue());
+            }
+
+            for (Future<List<Container>> future : futures) {
+                containers.addAll(future.get());
+            }
+
+        } catch (KeeperException |
+                InterruptedException |
+                ExecutionException ex) {
+            LOG.error(ex.toString(), ex);
+            throw new NotAcceptableException(ex.toString());
+        }
+
+        return containers.stream();
     }
 
 
@@ -423,6 +456,8 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         // TODO: Need to check all paths to see if 
         // this Container already exists.
+        // Different Tenants/Users should be able to create
+        // Containers of the same name.
         ZooKeeper zk = zooKeeperClient.getZookeeper();
 
         List<String> nodes;
@@ -445,6 +480,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
                 + "/" + c.getName();
 
         c.setState(State.STOPPED);
+        c.setAdded(Utils.now());
 
         try {
             ByteArrayOutputStream mem = new ByteArrayOutputStream();
