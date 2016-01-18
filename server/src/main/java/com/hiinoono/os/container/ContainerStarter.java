@@ -4,16 +4,14 @@ import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
 import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommand.Setter;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
@@ -35,13 +33,9 @@ public class ContainerStarter extends HystrixCommand<Container> {
     private final ZooKeeper zk;
 
     /**
-     * ACL to create nodes with.
-     *
-     * For private: Ids.CREATOR_ALL_ACL
-     *
-     * For development: Ids.OPEN_ACL_UNSAFE
+     * Path to transition state for this Container.
      */
-    private final ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
+    private final String transitionState;
 
     private static final HystrixCommandGroupKey GROUP_KEY
             = HystrixCommandGroupKey.Factory.asKey("Container");
@@ -74,18 +68,31 @@ public class ContainerStarter extends HystrixCommand<Container> {
         super(Setter
                 .withGroupKey(GROUP_KEY)
                 .andCommandPropertiesDefaults(COMMAND_PROPS));
+
         this.container = container;
         this.zk = zk;
+
+        transitionState = ContainerConstants.CONTAINERS
+                + "/" + Utils.getNodeId()
+                + ContainerConstants.TRANSITIONING
+                + "/" + container.getName();
     }
 
 
     @Override
     protected Container run() throws Exception {
         LOG.info("Starting: " + container.getName());
-        // Start and move to /containers/running
-        Thread.sleep(15000);  // Simulate starting
+
+        container.setState(State.STARTING);
+        ContainerUtils.marshall(zk, container, transitionState);
+
+        // Simulate starting
+        Thread.sleep(15000);
         container.setState(State.RUNNING);
         container.setLastStarted(Utils.now());
+
+        // Delete transition state
+        zk.delete(transitionState, -1);
 
         // Start and move to /containers/{nodeId}/running
         final String path = ContainerConstants.CONTAINERS
@@ -113,7 +120,12 @@ public class ContainerStarter extends HystrixCommand<Container> {
                 + "/" + container.getName();
 
         try {
+
+            // Delete transition state
+            zk.delete(transitionState, -1);
+
             ContainerUtils.marshall(zk, container, path);
+            
         } catch (JAXBException | KeeperException | InterruptedException ex) {
             LOG.error(ex.getLocalizedMessage(), ex);
         }
