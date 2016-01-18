@@ -13,7 +13,6 @@ import com.hiinoono.persistence.PersistenceManager;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -31,8 +30,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.ws.rs.NotAcceptableException;
 import javax.xml.bind.JAXBContext;
@@ -141,7 +138,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             }
 
             try {
-                encrypt("Test encryption key".getBytes());
+                Utils.encrypt("Test encryption key".getBytes());
             } catch (GeneralSecurityException ex) {
                 LOG.error(ex.getLocalizedMessage());
                 System.err.println("\n\tError with encryption key "
@@ -283,7 +280,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             marshaller.marshal(t, mem);
 
-            zk.create(tenantPath, encrypt(mem.toByteArray()),
+            zk.create(tenantPath, Utils.encrypt(mem.toByteArray()),
                     acl, CreateMode.PERSISTENT);
             LOG.info("Adding Tenant: " + t.getName() + "\n" + mem);
         } catch (NodeExistsException ex) {
@@ -378,19 +375,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     }
 
 
-    byte[] encrypt(byte[] clear) throws GeneralSecurityException {
-
-        // Create key and cipher
-        Key aesKey = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES");
-
-        // encrypt the data
-        cipher.init(Cipher.ENCRYPT_MODE, aesKey);
-        return cipher.doFinal(clear);
-
-    }
-
-
     /**
      * Get current date and time.
      *
@@ -401,17 +385,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         GregorianCalendar date = new GregorianCalendar();
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         return dtf.newXMLGregorianCalendar(date);
-    }
-
-
-    public static void main(String[] args) throws GeneralSecurityException {
-        System.out.println("Running..");
-        ZooKeeperPersistenceManager zpm = new ZooKeeperPersistenceManager();
-
-        byte[] encrypted = zpm.encrypt("Hello World@".getBytes());
-
-        byte[] decrypted = Utils.decrypt(encrypted);
-        System.out.println(new String(decrypted));
     }
 
 
@@ -429,7 +402,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
             for (String node : nodes) {
                 String path = ContainerConstants.CONTAINERS + "/" + node;
-                futures.add(new GetContainersForNode(zk, path, key).queue());
+                futures.add(new GetContainersForNode(zk, path).queue());
             }
 
             for (Future<List<Container>> future : futures) {
