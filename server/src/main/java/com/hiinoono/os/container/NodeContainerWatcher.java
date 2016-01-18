@@ -118,9 +118,8 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
     @Override
     public void process(WatchedEvent event) {
-        LOG.info(event.toString());
-        System.out.println("Event: " + event);
-
+        LOG.debug(event.toString());
+       
         final EventType type = event.getType();
         final String path = event.getPath();
 
@@ -131,7 +130,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
                 // Reset this Watcher
                 List<String> containers = zk.getChildren(path, this);
-                System.out.println("Containers: " + containers);
+                LOG.debug("Containers: " + containers);
 
                 for (String c : containers) {
 
