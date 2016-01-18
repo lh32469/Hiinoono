@@ -6,13 +6,10 @@ import com.hiinoono.jaxb.State;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
-import java.util.ArrayList;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.LoggerFactory;
 
 
@@ -33,15 +30,6 @@ public class ContainerCreator extends HystrixCommand<Container> {
      */
     private final String transitionState;
 
-    /**
-     * ACL to create nodes with.
-     *
-     * For private: Ids.CREATOR_ALL_ACL
-     *
-     * For development: Ids.OPEN_ACL_UNSAFE
-     */
-    private final ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
     private static final HystrixCommandGroupKey GROUP_KEY
             = HystrixCommandGroupKey.Factory.asKey("Container");
 
@@ -57,7 +45,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
         super(Setter
                 .withGroupKey(GROUP_KEY)
                 .andCommandPropertiesDefaults(COMMAND_PROPS));
-        
+
         this.container = container;
         this.zk = zk;
 
