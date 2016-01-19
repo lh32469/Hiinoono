@@ -6,6 +6,7 @@ import com.hiinoono.jaxb.Container;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
 import javax.xml.bind.JAXBException;
@@ -88,8 +89,11 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
             }
 
             return containers;
-        } catch (KeeperException | InterruptedException | JAXBException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
+        } catch (KeeperException |
+                InterruptedException |
+                GeneralSecurityException |
+                JAXBException ex) {
+            LOG.error(ex.toString(), ex);
             throw ex;
         }
     }
