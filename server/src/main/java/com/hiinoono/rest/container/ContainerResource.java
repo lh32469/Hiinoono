@@ -2,8 +2,8 @@ package com.hiinoono.rest.container;
 
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Containers;
-import com.hiinoono.jaxb.Tenant;
-import com.hiinoono.jaxb.Users;
+import com.hiinoono.jaxb.State;
+import com.hiinoono.jaxb.User;
 import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
@@ -39,9 +39,9 @@ public class ContainerResource {
 
     @Inject
     private PersistenceManager pm;
-
-    @Inject
-    private ContainerDriver driver;
+//
+//    @Inject
+//    private ContainerDriver driver;
 
     @Context
     private SecurityContext sc;
@@ -50,8 +50,25 @@ public class ContainerResource {
     @POST
     @Path("create")
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+//    @HiinoonoRolesAllowed(roles = {Roles.USER},
+//            message = "You are not permitted to create containers.  " +
+//                    "Only Users can create containers.")
     public Container create(Container c) throws IOException {
         LOG.info(c.getName() + " => " + c.getTemplate());
+
+        // Principal name is tenant/user
+        String principalName = sc.getUserPrincipal().getName();
+        LOG.trace("Principal Name: " + principalName);
+
+        final String tenantName = principalName.split("/")[0];
+        final String userName = principalName.split("/")[1];
+
+        User user = new User();
+        user.setTenant(tenantName);
+        user.setName(userName);
+
+        c.setOwner(user);
+
         pm.addContainer(c);
         return c;
     }
@@ -59,12 +76,15 @@ public class ContainerResource {
 
     /**
      * Users can only list the containers they created whereas the Tenant Admin
-     * can list containers for all users in the tenancy.
+     * can list containers for all users in the tenancy and Hiinoono Admin can
+     * list all containers for all tenants.
      *
      * @return
      */
     @GET
     @Path("list")
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN, Roles.T_ADMIN, Roles.USER},
+            message = "You are not permitted to list containers.")
     public Containers list() {
 
         // Principal name is tenant/user
@@ -72,10 +92,29 @@ public class ContainerResource {
         LOG.trace("Principal Name: " + principalName);
 
         final String tenantName = principalName.split("/")[0];
+        final String userName = principalName.split("/")[1];
+
         LOG.debug(tenantName);
 
+        List<Container> list;
+
+        if (sc.isUserInRole(Roles.H_ADMIN)) {
+            list = pm.getContainers().collect(Collectors.toList());
+
+        } else if (sc.isUserInRole(Roles.T_ADMIN)) {
+            list = pm.getContainers().filter(
+                    n -> n.getOwner().getTenant().equals(tenantName)
+            ).collect(Collectors.toList());
+
+        } else {
+            list = pm.getContainers().filter(
+                    n -> n.getOwner().getTenant().equals(tenantName)
+                    && n.getOwner().getName().equals(userName)
+            ).collect(Collectors.toList());
+
+        }
+
         Containers containers = new Containers();
-        List<Container> list = pm.getContainers().collect(Collectors.toList());
         containers.getContainers().addAll(list);
 
         return containers;
