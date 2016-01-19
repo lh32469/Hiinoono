@@ -9,6 +9,7 @@ import com.hiinoono.jaxb.User;
 import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.os.container.ContainerUtils;
 import com.hiinoono.os.container.GetContainersForNode;
+import com.hiinoono.os.container.NodeContainerWatcher;
 import com.hiinoono.persistence.PersistenceManager;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -239,7 +241,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             return tenants.stream();
         } catch (KeeperException |
                 InterruptedException | ExecutionException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
+            LOG.error(ex.toString(), ex);
             return Collections.EMPTY_LIST.stream();
         }
     }
@@ -264,9 +266,29 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public Stream<Node> getNodes() {
-        //To change body of generated methods, choose Tools | Templates.
-        Logger.getLogger(this.getClass().getName()).severe("Not supported yet.");
-        throw new UnsupportedOperationException("Not supported yet.");
+
+        try {
+
+            ZooKeeper zk = zooKeeperClient.getZookeeper();
+            List<Node> nodes = new LinkedList<>();
+            List<String> names
+                    = zk.getChildren(NodeContainerWatcher.NODES, false);
+            LOG.info(names.toString());
+
+            for (String name : names) {
+                nodes.add(ZKUtils.loadNode(zk,
+                        NodeContainerWatcher.NODES + "/" + name));
+            }
+
+            return nodes.stream();
+
+        } catch (KeeperException |
+                JAXBException |
+                GeneralSecurityException |
+                InterruptedException ex) {
+            LOG.error(ex.toString(), ex);
+            return Collections.EMPTY_LIST.stream();
+        }
     }
 
 
@@ -455,6 +477,8 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         // Check availablity (Node up?) and utilization and assign a Node
         // For now, just pick first one.
         final String nodeID = nodes.get(0);
+        Node node = new Node();
+        node.setId(nodeID);
 
         final String path = ContainerConstants.CONTAINERS
                 + "/" + nodeID
@@ -463,6 +487,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         c.setState(State.STOPPED);
         c.setAdded(Utils.now());
+        c.setNode(node);
 
         try {
             ByteArrayOutputStream mem = new ByteArrayOutputStream();
