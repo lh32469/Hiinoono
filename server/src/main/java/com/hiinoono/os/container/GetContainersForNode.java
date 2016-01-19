@@ -82,7 +82,7 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
                         = zk.getChildren(path + "/" + state, null);
                 for (String containerName : containerNames) {
                     String cPath = path + "/" + state + "/" + containerName;
-                    LOG.info(cPath);
+                    LOG.debug(cPath);
                     containers.add(ContainerUtils.load(zk, cPath));
                 }
 
