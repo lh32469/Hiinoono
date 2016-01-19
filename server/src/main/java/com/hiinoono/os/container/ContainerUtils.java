@@ -3,6 +3,7 @@ package com.hiinoono.os.container;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.User;
+import com.hiinoono.persistence.zk.ZKUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.security.GeneralSecurityException;
@@ -28,40 +29,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ContainerUtils {
 
-    private static JAXBContext jc;
-
-    /**
-     * ACL to create nodes with.
-     *
-     * For private: Ids.CREATOR_ALL_ACL
-     *
-     * For development: Ids.OPEN_ACL_UNSAFE
-     */
-    private final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ContainerUtils.class);
-
-
-    static {
-
-        Class[] classes = {Container.class};
-
-        try {
-            Map<String, Object> properties = new HashMap<>();
-            properties.put("eclipselink.media-type", "application/json");
-            jc = JAXBContextFactory.createContext(classes, properties);
-
-        } catch (JAXBException ex) {
-            LOG.error(ex.getErrorCode(), ex);
-        }
-
-    }
-
-
-    public static JAXBContext getJAXBContext() {
-        return jc;
-    }
 
 
     /**
@@ -80,35 +49,6 @@ public class ContainerUtils {
         zkName.append(".");
         zkName.append(owner.getName().replaceAll(" ", "_"));
         return zkName.toString();
-    }
-
-
-    /**
-     * Store the Container in the given path.
-     */
-    public static void marshall(ZooKeeper zk, Container c, String path) throws
-            JAXBException, KeeperException,
-            InterruptedException, GeneralSecurityException {
-
-        ByteArrayOutputStream mem = new ByteArrayOutputStream();
-        Marshaller m = jc.createMarshaller();
-        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-        m.marshal(c, mem);
-        zk.create(path, Utils.encrypt2(mem.toByteArray()),
-                acl, CreateMode.PERSISTENT);
-    }
-
-
-    /**
-     * Loads the Container from ZK at the path provided.
-     */
-    public static Container load(ZooKeeper zk, String path) throws
-            JAXBException, KeeperException,
-            InterruptedException, GeneralSecurityException {
-
-        Unmarshaller um = jc.createUnmarshaller();
-        String json = new String(Utils.decrypt2(zk.getData(path, false, null)));
-        return (Container) um.unmarshal(new StringReader(json));
     }
 
 
