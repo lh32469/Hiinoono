@@ -23,6 +23,9 @@
             <xs:element name="id"
                         maxOccurs="1"
                         type="xs:string"/>
+            <xs:element name="joined"
+                        maxOccurs="1"
+                        type="xs:dateTime"/>
             <xs:element name="status"
                         minOccurs="0"
                         maxOccurs="1"
