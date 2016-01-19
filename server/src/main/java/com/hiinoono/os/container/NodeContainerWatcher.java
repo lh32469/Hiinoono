@@ -6,14 +6,13 @@ import static com.hiinoono.os.container.ContainerConstants.CONTAINERS;
 import static com.hiinoono.os.container.ContainerConstants.NEW;
 import static com.hiinoono.os.container.ContainerConstants.STATES;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
-import java.io.StringReader;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -119,7 +118,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
     @Override
     public void process(WatchedEvent event) {
         LOG.debug(event.toString());
-       
+
         final EventType type = event.getType();
         final String path = event.getPath();
 
@@ -134,12 +133,8 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
                 for (String c : containers) {
 
-                    Unmarshaller um = jc.createUnmarshaller();
                     final String cPath = event.getPath() + "/" + c;
-                    String json = new String(zk.getData(cPath, false, null));
-
-                    Container container
-                            = (Container) um.unmarshal(new StringReader(json));
+                    Container container = ContainerUtils.load(zk, cPath);
 
                     if (path.equals(nodePath + NEW)) {
                         new ContainerCreator(container, zk).queue();
@@ -155,8 +150,9 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
         } catch (JAXBException |
                 KeeperException |
+                GeneralSecurityException |
                 InterruptedException ex) {
-            LOG.error(ex.getLocalizedMessage(), ex);
+            LOG.error(ex.toString(), ex);
         }
 
     }
