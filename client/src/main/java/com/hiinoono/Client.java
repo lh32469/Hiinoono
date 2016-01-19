@@ -336,32 +336,68 @@ public class Client {
         } else if (type.equalsIgnoreCase(CONTAINERS)) {
             HClient.Container cont = HClient.container(c, URI.create(svc));
             Containers containers = cont.list().getAsContainers();
-            final String format = "%-15s%-15s%-15s%-25s\n";
+            final String hinoonoAdminFormat
+                    = "%-15s%-15s%-15s%-15s%-10s%-25s\n";
+            final String tenantAdminformat
+                    = "%-15s%-15s%-15s%-10s%-25s\n";
+            final String userFormat
+                    = "%-15s%-15s%-10s%-25s\n";
+            Format dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat();
 
             System.out.println("");
 
-            System.out.printf(format,
-                    "Name",
-                    "Template",
-                    "State",
-                    "Added");
-
-            Format dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat();
+            if (user.getTenant().equals("hiinoono")) {
+                System.out.printf(hinoonoAdminFormat,
+                        "Name",
+                        "Tenant",
+                        "User",
+                        "Template",
+                        "State",
+                        "Added");
+            } else if (user.getName().equals("admin")) {
+                System.out.printf(tenantAdminformat,
+                        "Name",
+                        "User",
+                        "Template",
+                        "State",
+                        "Added");
+            } else {
+                System.out.printf(userFormat,
+                        "Name",
+                        "Template",
+                        "State",
+                        "Added");
+            }
 
             for (Container container : containers.getContainer()) {
-                XMLGregorianCalendar joined = container.getAdded();
-                if (joined != null) {
-                    ZonedDateTime zdt
-                            = joined.toGregorianCalendar().toZonedDateTime();
-                    System.out.printf(format,
+
+                XMLGregorianCalendar added = container.getAdded();
+                ZonedDateTime zdt
+                        = added.toGregorianCalendar().toZonedDateTime();
+
+                if (user.getTenant().equals("hiinoono")) {
+                    System.out.printf(hinoonoAdminFormat,
                             container.getName(),
+                            container.getOwner().getTenant(),
+                            container.getOwner().getName(),
+                            container.getTemplate(),
+                            container.getState(),
+                            dtf.format(zdt));
+                } else if (user.getName().equals("admin")) {
+                    System.out.printf(tenantAdminformat,
+                            container.getName(),
+                            container.getOwner().getName(),
                             container.getTemplate(),
                             container.getState(),
                             dtf.format(zdt));
                 } else {
-                    System.out.printf(format,
-                            container.getName(), "Unknown");
+                    System.out.printf(userFormat,
+                            container.getName(),
+                            container.getTemplate(),
+                            container.getState(),
+                            dtf.format(zdt));
                 }
+
             }
             System.out.println("");
 
