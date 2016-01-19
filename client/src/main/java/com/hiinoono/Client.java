@@ -307,10 +307,24 @@ public class Client {
         } else if (type.equalsIgnoreCase(NODES)) {
             HClient.Node t = HClient.node(c, URI.create(svc));
             Nodes nodes = t.getAsNodes();
+            final String format = "%-20s%-40s%-25s\n";
             System.out.println("");
+            System.out.printf(format,
+                    "Hostname",
+                    "NodeId",
+                    "Joined");
+
             for (Node node : nodes.getNode()) {
-                System.out.println(node.getId() + "  " + node.getHostname());
+                XMLGregorianCalendar joined = node.getJoined();
+                ZonedDateTime zdt
+                        = joined.toGregorianCalendar().toZonedDateTime();
+
+                System.out.printf(format,
+                        node.getHostname(),
+                        node.getId(),
+                        DTF.format(zdt));
             }
+
             System.out.println("");
 
         } else if (type.equalsIgnoreCase(USERS)) {
