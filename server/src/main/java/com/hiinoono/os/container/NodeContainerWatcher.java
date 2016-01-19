@@ -48,7 +48,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
     public static final String NODES = "/nodes";
 
     /**
-     * ZK path associated with this Node in the /containers path/dir.
+     * ZK path associated with this Node in the /container path/dir.
      */
     private final String containerNodePath;
 
