@@ -8,7 +8,6 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
 import java.util.Collections;
 import java.util.LinkedList;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -16,18 +15,15 @@ import org.slf4j.LoggerFactory;
 
 
 /**
+ * Get the Containers for a particular Node from ZooKeeper.
  *
  * @author Lyle T Harris
  */
 public class GetContainersForNode extends HystrixCommand<List<Container>> {
 
-    private static JAXBContext jc;
-
     private final ZooKeeper zk;
 
     private final String path;
-
-    private final byte[] key;
 
     private static final HystrixCommandGroupKey GROUP_KEY
             = HystrixCommandGroupKey.Factory.asKey("ZK-Persistence");
@@ -51,13 +47,13 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
 
 
     /**
-     * Get the named Tenant from ZooKeeper using the decryption key provided.
+     * Get the Containers from ZooKeeper under the node path provided.
      *
      * @param zk
      * @param path ZK /container/{nodeId} path.
-     * @param key Key used to initially encrypt the Tenant.
+     *
      */
-    public GetContainersForNode(ZooKeeper zk, String path, byte[] key) {
+    public GetContainersForNode(ZooKeeper zk, String path) {
         super(Setter
                 .withGroupKey(GROUP_KEY)
                 .andThreadPoolPropertiesDefaults(THREAD_PROPERTIES)
@@ -66,7 +62,6 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
 
         this.zk = zk;
         this.path = path;
-        this.key = key;
 
     }
 
@@ -80,7 +75,7 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
             List<String> states = zk.getChildren(path, null);
 
             for (String state : states) {
-                LOG.info(path + "/" + state);
+                LOG.trace(path + "/" + state);
 
                 List<String> containerNames
                         = zk.getChildren(path + "/" + state, null);
