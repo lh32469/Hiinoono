@@ -20,6 +20,8 @@ import com.hiinoono.rest.tenant.TenantResource;
 import com.hiinoono.rest.user.UserResource;
 import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.filter.LoggingFilter;
@@ -106,9 +108,11 @@ public class API extends ResourceConfig {
                             .to(PersistenceManager.class);
                 } catch (IOException |
                         KeeperException |
+                        JAXBException |
+                        GeneralSecurityException |
                         InterruptedException ex) {
-                    LOG.error(ex.getLocalizedMessage());
-                    System.err.println(ex.getLocalizedMessage());
+                    LOG.error(ex.toString());
+                    System.err.println(ex.toString());
                     System.exit(1);
                 }
             }
