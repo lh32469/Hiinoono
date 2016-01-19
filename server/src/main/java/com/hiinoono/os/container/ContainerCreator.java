@@ -3,6 +3,7 @@ package com.hiinoono.os.container;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
+import com.hiinoono.persistence.zk.ZKUtils;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
@@ -65,7 +66,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
 
         container.setState(State.CREATING);
         // Add to /containers/{nodeId}/transition
-        ContainerUtils.marshall(zk, container, transitionState);
+        ZKUtils.savePersistent(zk, container, transitionState);
 
         // Simulate creation
         Thread.sleep(15000);
@@ -80,7 +81,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
                 + ContainerConstants.CREATED
                 + "/" + ContainerUtils.getZKname(container);
 
-        ContainerUtils.marshall(zk, container, created);
+        ZKUtils.savePersistent(zk, container, created);
 
         LOG.info("Created " + container.getName());
         return container;
@@ -104,7 +105,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
             // Delete transition state
             zk.delete(transitionState, -1);
 
-            ContainerUtils.marshall(zk, container, path);
+            ZKUtils.savePersistent(zk, container, path);
 
         } catch (JAXBException | KeeperException |
                 GeneralSecurityException | InterruptedException ex) {
