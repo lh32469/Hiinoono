@@ -3,6 +3,7 @@ package com.hiinoono.os.container;
 import com.netflix.hystrix.HystrixCommand;
 import java.util.List;
 import com.hiinoono.jaxb.Container;
+import com.hiinoono.persistence.zk.ZKUtils;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.LoggerFactory;
 
@@ -75,20 +77,21 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
             List<Container> containers = new LinkedList<>();
             List<String> states = zk.getChildren(path, null);
 
+            List<String> tree = ZKUtil.listSubTreeBFS(zk, path);
+          
+            // Remove directory-only paths
+            tree.remove(path);
             for (String state : states) {
-                LOG.trace(path + "/" + state);
+                tree.remove(path + "/" + state);
+            }
 
-                List<String> containerNames
-                        = zk.getChildren(path + "/" + state, null);
-                for (String containerName : containerNames) {
-                    String cPath = path + "/" + state + "/" + containerName;
-                    LOG.debug(cPath);
-                    containers.add(ContainerUtils.load(zk, cPath));
-                }
-
+            for (String leaf : tree) {
+                LOG.debug(leaf);
+                containers.add(ZKUtils.loadContainer(zk, leaf));
             }
 
             return containers;
+            
         } catch (KeeperException |
                 InterruptedException |
                 GeneralSecurityException |
