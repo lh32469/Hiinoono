@@ -36,7 +36,7 @@ public class Authorizer implements SecurityContext {
     @Override
     public boolean isUserInRole(String role) {
         boolean result = user.getRoles().contains(role);
-        LOG.info(user.getTenant() + "/" + user.getName()
+        LOG.debug(user.getTenant() + "/" + user.getName()
                 + " ? " + role + " -> " + result);
         return result;
     }
