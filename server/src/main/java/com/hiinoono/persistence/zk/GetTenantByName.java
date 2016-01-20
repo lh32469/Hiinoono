@@ -12,6 +12,8 @@ import java.security.Key;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.JAXBContext;
@@ -99,11 +101,16 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
 
     @Override
     protected Optional<Tenant> run() throws Exception {
-        Unmarshaller unMarshaller = jc.createUnmarshaller();
-        byte[] data = zk.getData(TENANTS + "/" + name, false, null);
-        String json = new String(decrypt(data));
-        Tenant t = (Tenant) unMarshaller.unmarshal(new StringReader(json));
-        return Optional.of(t);
+        try {
+            Unmarshaller unMarshaller = jc.createUnmarshaller();
+            byte[] data = zk.getData(TENANTS + "/" + name, false, null);
+            String json = new String(decrypt(data));
+            Tenant t = (Tenant) unMarshaller.unmarshal(new StringReader(json));
+            return Optional.of(t);
+        } catch (Exception ex) {
+            LOG.error(ex.toString());
+            throw ex;
+        }
     }
 
 
