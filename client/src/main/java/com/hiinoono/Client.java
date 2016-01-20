@@ -15,7 +15,10 @@ import java.net.URL;
 import java.text.Format;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
@@ -28,7 +31,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -85,6 +87,8 @@ public class Client {
 
     private static final String ADD_CONTAINER = "addContainer";
 
+    private static final String GET_CONTAINER = "getContainer";
+
     private static final String CLIENT = "HiinoonoClient";
 
     private static final String API = "HIINOONO_SERVICE";
@@ -101,7 +105,25 @@ public class Client {
 
     public static void main(String[] args) throws IOException, ParseException {
 
-        Options options = getOptions();
+        String _user = System.getenv(USER);
+        if (_user == null) {
+            LOG.error(USER + " environment variable not set");
+            System.exit(1);
+        }
+
+        _user = _user.replaceAll("/", " ").trim();
+
+        String[] values = _user.split(" ");
+        if (values.length < 2) {
+            LOG.error("Invalid syntax for login:  " + _user);
+            return;
+        }
+
+        user = new User();
+        user.setTenant(values[0]);
+        user.setName(values[1]);
+
+        Options options = HiinoonoOptions.getOptions(user);
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
 
@@ -128,14 +150,14 @@ public class Client {
             System.exit(0);
         }
 
-        String svc = "http://localhost:8080/api";
+        String services = "http://localhost:8080/api";
 
         if (System.getenv(API) != null) {
-            svc = System.getenv(API);
+            services = System.getenv(API);
         }
 
         if (cmd.hasOption(SERVICE)) {
-            svc = cmd.getOptionValue(SERVICE);
+            services = cmd.getOptionValue(SERVICE);
         }
 
         if (cmd.hasOption(PROXY)) {
@@ -159,32 +181,11 @@ public class Client {
             System.setProperty("http.proxyPort", port);
         }
 
-        String _user = System.getenv(USER);
-        if (_user == null) {
-            LOG.error(USER + " environment variable not set");
-            System.exit(1);
-        }
-
-        _user = _user.replaceAll("/", " ").trim();
-
-        String[] values = _user.split(" ");
-        if (values.length < 2) {
-            LOG.error("Invalid syntax for login:  " + _user);
-            return;
-        }
-
-        user = new User();
-        user.setTenant(values[0]);
-        user.setName(values[1]);
-
         String pass = System.getenv(PASS);
         if (pass == null) {
             LOG.error(PASS + " environment variable not set");
             System.exit(1);
         }
-
-        LOG.info("Connecting to: " + svc + " as "
-                + user.getTenant() + "/" + user.getName());
 
         HttpAuthenticationFeature authentication
                 = HttpAuthenticationFeature.basic(user.getTenant()
@@ -202,10 +203,34 @@ public class Client {
             c.register(LoggingFilter.class);
         }
 
+        // Get list of possible service URL API endpoints provided and
+        // shuffle them for load balancing.
+        List<String> serviceList = Arrays.asList(services.split(","));
+        Collections.shuffle(serviceList);
+
+        // The resulting service URL that this client will use.
+        String svc = null;
+
+        // Find a working service URL.
+        SiteInfo info = null;
+        Iterator<String> iter = serviceList.iterator();
+
+        while (info == null && iter.hasNext()) {
+            try {
+                svc = iter.next();
+                HClient.Site site = HClient.site(c, URI.create(svc));
+                info = site.info().getAsSiteInfo();
+            } catch (WebApplicationException | ProcessingException ex) {
+                LOG.warn(svc + " " + ex.getLocalizedMessage());
+            }
+        }
+
         try {
-            // Sanity test service URL
+            // Sanity test service URL to make sure a viable one was selected.
+            LOG.info("Connecting to: " + svc + " as "
+                    + user.getTenant() + "/" + user.getName());
             HClient.Site site = HClient.site(c, URI.create(svc));
-            SiteInfo info = site.info().getAsSiteInfo();
+            info = site.info().getAsSiteInfo();
             LOG.info("Connected to:  " + info.getName()
                     + ", Version: " + info.getVersion());
         } catch (WebApplicationException ex) {
@@ -241,6 +266,8 @@ public class Client {
                 sampleVm(cmd, c, svc);
             } else if (cmd.hasOption(ADD_CONTAINER)) {
                 addContainer(cmd, c, svc);
+            } else if (cmd.hasOption(GET_CONTAINER)) {
+                getContainer(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -418,102 +445,9 @@ public class Client {
         } else {
             LOG.error("Unrecognized --" + LIST + " argument provided\n");
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp(CLIENT, getOptions());
+            formatter.printHelp(CLIENT, HiinoonoOptions.getOptions(user));
             System.exit(1);
         }
-    }
-
-
-    static final Options getOptions() {
-
-        final Options options = new Options();
-
-        options.addOption("h", HELP, false,
-                "Display this message.");
-
-        options.addOption("v", VERSION, false,
-                "Display version.");
-
-        options.addOption("l", LIST, true,
-                "List tenants, nodes, instances ");
-
-        options.addOption("L", LOGGING, false,
-                "Enable org.glassfish.jersey.filter.LoggingFilter");
-
-        Option proxy = Option.builder("p")
-                .hasArg()
-                .argName("http://...")
-                .longOpt(PROXY)
-                .desc("HTTP Proxy (if needed).")
-                .build();
-        options.addOption(proxy);
-
-        Option service = Option.builder("s")
-                .hasArg()
-                .argName("http://...")
-                .longOpt(SERVICE)
-                .desc("Hiinoono Service API URL or set " + API
-                        + " environment variable")
-                .build();
-        options.addOption(service);
-
-        Option addTenant = Option.builder()
-                .hasArgs()
-                .argName("name")
-                .longOpt(ADD_TENANT)
-                .desc("Add a new Tenant.")
-                .build();
-        options.addOption(addTenant);
-
-        Option deleteTenant = Option.builder()
-                .hasArgs()
-                .argName("name")
-                .longOpt(DELETE_TENANT)
-                .desc("Delete a Tenant.")
-                .build();
-        options.addOption(deleteTenant);
-
-        Option addUser = Option.builder()
-                .hasArgs()
-                .argName("name")
-                .longOpt(ADD_USER)
-                .desc("Add a new User.  (Must be Tenant Admin)")
-                .build();
-        options.addOption(addUser);
-
-        Option deleteUser = Option.builder()
-                .hasArgs()
-                .argName("name")
-                .longOpt(DELETE_USER)
-                .desc("Delete a User.  (Must be Tenant Admin)")
-                .build();
-        options.addOption(deleteUser);
-
-        Option addVm = Option.builder()
-                .hasArgs()
-                .argName("fileName")
-                .longOpt(ADD_VM)
-                .desc("Add a new Virtual Machine.")
-                .build();
-        options.addOption(addVm);
-
-        Option sampleVm = Option.builder()
-                .hasArgs()
-                .argName("xml|json")
-                .longOpt(SAMPLE_VM)
-                .desc("Display Sample Virtual Machine.")
-                .build();
-        options.addOption(sampleVm);
-
-        Option addContainer = Option.builder()
-                .hasArgs()
-                .argName("fileName")
-                .longOpt(ADD_CONTAINER)
-                .desc("Add a new Container.")
-                .build();
-        options.addOption(addContainer);
-
-        return options;
     }
 
 
@@ -641,6 +575,37 @@ public class Client {
         testC.setTemplate("ubuntu");
         container.create().postXmlAsContainer(testC);
 
+    }
+
+
+    private static void getContainer(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String name = cmd.getOptionValue(GET_CONTAINER);
+        List<String> list = Arrays.asList(name.split("/"));
+
+        // Make list [cn-name/user/tenant] 
+        Collections.reverse(list);
+
+        String tenantName = user.getTenant();
+        String userName = user.getName();
+
+        if (list.size() > 1) {
+            // There is a user option
+            userName = list.get(1);
+        }
+
+        if (list.size() > 2) {
+            // There is a tenant option
+            tenantName = list.get(2);
+        }
+
+        HClient.Container container = HClient.container(c, URI.create(svc));
+        HClient.Container.GetTenantUserName get
+                = container.getTenantUserName(tenantName, userName, list.get(0));
+        String result = get.getAs(String.class);
+        System.out.println("Result: " + result);
     }
 
 
