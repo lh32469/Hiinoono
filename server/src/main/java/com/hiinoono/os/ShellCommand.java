@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,7 @@ public class ShellCommand extends HystrixCommand<String> {
 
     private static final HystrixCommandProperties.Setter COMMAND_PROPS
             = HystrixCommandProperties.Setter()
-            .withExecutionTimeoutInMilliseconds(60000);
+            .withExecutionTimeoutInMilliseconds(60000);  // Should be a param
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ShellCommand.class);
@@ -48,14 +47,7 @@ public class ShellCommand extends HystrixCommand<String> {
      * @param command OS Command to execute
      */
     public ShellCommand(String command) {
-        super(Setter
-                .withGroupKey(GROUP_KEY)
-                .andCommandPropertiesDefaults(COMMAND_PROPS));
-
-        this.command = new LinkedList<>();
-        this.command.addAll(Arrays.asList(command.split(" ")));
-        this.fallbackResponse = null;
-
+        this(Arrays.asList(command.split(" ")));
     }
 
 
@@ -67,14 +59,34 @@ public class ShellCommand extends HystrixCommand<String> {
      * method otherwise the string ShellCommand.ERROR is provided.
      */
     public ShellCommand(String command, String fallbackResponse) {
+        this(Arrays.asList(command.split(" ")), fallbackResponse);
+    }
+
+
+    /**
+     * Construct a command to execute.
+     *
+     * @param command OS Command and args as List to execute
+     */
+    public ShellCommand(List<String> command) {
+        this(command, null);
+    }
+
+
+    /**
+     * Construct a command to execute.
+     *
+     * @param command OS Command and args as List to execute
+     * @param fallbackResponse Optional response to provide in getFallback()
+     * method otherwise the string ShellCommand.ERROR is provided.
+     */
+    public ShellCommand(List<String> command, String fallbackResponse) {
         super(Setter
                 .withGroupKey(GROUP_KEY)
                 .andCommandPropertiesDefaults(COMMAND_PROPS));
 
-        this.command = new LinkedList<>();
-        this.command.addAll(Arrays.asList(command.split(" ")));
+        this.command = command;
         this.fallbackResponse = fallbackResponse;
-
     }
 
 
@@ -84,23 +96,31 @@ public class ShellCommand extends HystrixCommand<String> {
         LOG.info(command.toString());
         StringBuilder sb = new StringBuilder();
 
-        ProcessBuilder pb = new ProcessBuilder(command);
-        Process process = pb.start();
-        InputStream is = process.getInputStream();
-        InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
-        String line;
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
+        try {
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Process process = pb.start();
+            InputStream is = process.getInputStream();
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            int status = process.waitFor();
+            if (status != 0) {
+                LOG.warn("Exit status = " + status
+                        + " for command: " + command);
+            }
+
+            return sb.toString();
+
+        } catch (Exception ex) {
+            LOG.error(ex.toString());
+            throw ex;
         }
 
-        int status = process.waitFor();
-        if (status != 0) {
-            LOG.warn("Exit status = " + status
-                    + " for command: " + command);
-        }
-
-        return sb.toString();
     }
 
 
