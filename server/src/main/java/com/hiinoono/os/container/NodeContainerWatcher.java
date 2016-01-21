@@ -148,7 +148,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
                 for (String c : containers) {
 
                     final String cPath = event.getPath() + "/" + c;
-                    Container container = ZKUtils.loadContainer(zk, path);
+                    Container container = ZKUtils.loadContainer(zk, cPath);
 
                     if (path.equals(containerNodePath + NEW)) {
                         new ContainerCreator(container, zk).queue();
