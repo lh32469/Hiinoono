@@ -90,7 +90,6 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         User user = new User();
         user.setTenant(tenant);
         user.setName(username);
-        user.getRoles().add("DEMO");
 
         if ("admin".equals(username)) {
             if ("hiinoono".equals(tenant)) {
@@ -101,6 +100,9 @@ public class AuthorizationFilter implements ContainerRequestFilter {
                 user.getRoles().add(Roles.T_ADMIN);
                 user.getRoles().add(user.getTenant() + "/" + user.getName());
             }
+        } else {
+            // Basic User
+            user.getRoles().add(Roles.USER);
         }
 
         LOG.info("Logged in: " + user.getTenant() + "/" + user.getName() + " "
