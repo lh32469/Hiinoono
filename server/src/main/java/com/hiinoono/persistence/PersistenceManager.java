@@ -24,9 +24,6 @@ public interface PersistenceManager {
     void addTenant(Tenant t);
 
 
-    void addContainer(Container t);
-
-
     void deleteTenant(String tenantName);
 
 
@@ -42,6 +39,24 @@ public interface PersistenceManager {
      * @return
      */
     Stream<Node> getNodes();
+
+
+    /**
+     * Add the Container to the cluster which implies creating and starting it
+     * as well.
+     *
+     * @param container
+     */
+    void addContainer(Container container);
+
+
+    void startContainer(Container container);
+
+
+    void stopContainer(Container container);
+
+
+    void deleteContainer(Container container);
 
 
     /**
