@@ -17,11 +17,13 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="CREATING"/>
             <xs:enumeration value="CREATED"/>
+            <xs:enumeration value="START_REQUESTED"/>
+            <xs:enumeration value="STARTING"/>
+            <xs:enumeration value="RUNNING"/>
+            <xs:enumeration value="STOP_REQUESTED"/>
+            <xs:enumeration value="STOPPING"/>
             <xs:enumeration value="STOPPED"/>
-            <xs:enumeration value="STARTING"/>  
-            <xs:enumeration value="RUNNING"/>  
-            <xs:enumeration value="STOPPING"/>  
-            <xs:enumeration value="STOPPED"/>
+            <xs:enumeration value="DELETE_REQUESTED"/>
             <xs:enumeration value="WARNING"/>
             <xs:enumeration value="ERROR"/>
         </xs:restriction>
