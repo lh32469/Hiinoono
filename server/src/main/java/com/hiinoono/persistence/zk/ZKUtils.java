@@ -4,6 +4,7 @@ import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.os.container.ContainerUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
@@ -136,6 +137,23 @@ public class ZKUtils {
         m.marshal(obj, mem);
         zk.create(path, Utils.encrypt2(mem.toByteArray()),
                 acl, CreateMode.EPHEMERAL);
+    }
+
+
+    /**
+     * Store the Container in the ContainerConstants.TRANSITIONING path for
+     * the Node it is currently assigned to.
+     */
+    public static void saveToTransitioning(ZooKeeper zk, Container container)
+            throws JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
+
+        final String transition = ContainerConstants.CONTAINERS
+                + "/" + container.getNode().getId()
+                + ContainerConstants.TRANSITIONING
+                + "/" + ContainerUtils.getZKname(container);
+
+        ZKUtils.savePersistent(zk, container, transition);
     }
 
 
