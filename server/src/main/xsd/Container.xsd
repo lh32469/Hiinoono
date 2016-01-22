@@ -33,11 +33,17 @@
                         minOccurs="0"
                         maxOccurs="1"
                         type="node"/>
+            <!-- IP Address of the container bridge interface -->
             <xs:element name="ipAddress"
                         minOccurs="0"
                         maxOccurs="1"
                         type="xs:string"/>
-            <!-- External IP and Port for SSH access -->
+            <!-- Ports on host forwarded to container ipAddress  -->
+            <xs:element name="portForwardingPairs"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="xs:string"/>
+            <!-- SSH access info -->
             <xs:element name="ssh"
                         minOccurs="0"
                         maxOccurs="1"
