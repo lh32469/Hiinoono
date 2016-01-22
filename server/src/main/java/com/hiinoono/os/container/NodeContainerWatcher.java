@@ -3,34 +3,26 @@ package com.hiinoono.os.container;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
+import com.hiinoono.jaxb.State;
 import com.hiinoono.os.ShellCommand;
 import static com.hiinoono.os.container.ContainerConstants.CONTAINERS;
 import static com.hiinoono.os.container.ContainerConstants.NEW;
 import static com.hiinoono.os.container.ContainerConstants.STATES;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
 
@@ -156,6 +148,19 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
                     } else if (path.equals(containerNodePath + CREATED)) {
                         new ContainerStarter(container, zk).queue();
                         zk.delete(cPath, -1);
+                    } else if (path.equals(containerNodePath + TRANSITIONING)) {
+                        // Get Desired State
+                        State state = container.getState();
+                        LOG.info("Desired State: " + state);
+                        if (state.equals(State.STOP_REQUESTED)) {
+                            LOG.info(state + ": " + container.getName());
+                            zk.delete(cPath, -1);
+                            new ContainerStopper(container, zk).queue();
+                        } else if (state.equals(State.DELETE_REQUESTED)) {
+                            LOG.info(state + ": " + container.getName());
+                            zk.delete(cPath, -1);
+                            new ContainerDeleter(container, zk).queue();
+                        }
                     }
 
                 }

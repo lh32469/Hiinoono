@@ -32,7 +32,7 @@ public interface ContainerConstants {
 
     /**
      * Sub path/dir for each node where containers are placed while in the
-     * process of moving from one state to another. Total path iqs
+     * process of moving from one state to another. Total path is
      * /containers/{nodeId}/transition
      */
     public static final String TRANSITIONING = "/transition";
@@ -42,6 +42,12 @@ public interface ContainerConstants {
      * path is /containers/{nodeId}/running.
      */
     public static final String RUNNING = "/running";
+
+    /**
+     * Sub path/dir for each node where running containers are placed. Total
+     * path is /containers/{nodeId}/running.
+     */
+    public static final String STOPPED = "/stopped";
 
     /**
      * Sub path/dir for each node where containers that had errors are placed.
@@ -56,6 +62,6 @@ public interface ContainerConstants {
     public static final String MGR_NODE = "/ContainerManager";
 
     public static final String[] STATES
-            = {NEW, CREATED, TRANSITIONING, RUNNING, ERRORS};
+            = {NEW, CREATED, TRANSITIONING, RUNNING, STOPPED, ERRORS};
 
 }

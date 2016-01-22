@@ -3,6 +3,7 @@ package com.hiinoono;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import com.hiinoono.jaxb.User;
+import org.apache.commons.cli.OptionGroup;
 
 
 /**
@@ -35,9 +36,15 @@ public class HiinoonoOptions {
 
     private static final String ADD_VM = "addVm";
 
-    private static final String ADD_CONTAINER = "addContainer";
+    static final String ADD_CONTAINER = "addContainer";
 
-    private static final String GET_CONTAINER = "getContainer";
+    static final String START_CONTAINER = "startContainer";
+
+    static final String STOP_CONTAINER = "stopContainer";
+
+    static final String DELETE_CONTAINER = "deleteContainer";
+
+    static final String GET_CONTAINER = "getContainer";
 
     private static final String API = "HIINOONO_SERVICE";
 
@@ -148,6 +155,14 @@ public class HiinoonoOptions {
                 .build();
         options.addOption(getContainer);
 
+        Option stopContainer = Option.builder()
+                .hasArgs()
+                .argName("container")
+                .longOpt(STOP_CONTAINER)
+                .desc("Stop a Container.")
+                .build();
+        options.addOption(stopContainer);
+
     }
 
 
@@ -187,6 +202,34 @@ public class HiinoonoOptions {
                 .desc("Get info on Container.")
                 .build();
         options.addOption(getContainer);
+
+        OptionGroup group = new OptionGroup();
+               
+        Option stopContainer = Option.builder()
+                .hasArgs()
+                .argName("container")
+                .longOpt(STOP_CONTAINER)
+                .desc("Stop a Container.")
+                .build();
+        group.addOption(stopContainer);
+
+        Option startContainer = Option.builder()
+                .hasArgs()
+                .argName("container")
+                .longOpt(START_CONTAINER)
+                .desc("Start a Container.")
+                .build();
+        group.addOption(startContainer);
+
+        Option deleteContainer = Option.builder()
+                .hasArgs()
+                .argName("container")
+                .longOpt(DELETE_CONTAINER)
+                .desc("Delete a Container.")
+                .build();
+        group.addOption(deleteContainer);
+        
+         options.addOptionGroup(group);
 
     }
 

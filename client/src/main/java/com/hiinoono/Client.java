@@ -22,10 +22,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.logging.Logger;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.xml.datatype.XMLGregorianCalendar;
+import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -129,7 +131,7 @@ public class Client {
 
         try {
             cmd = parser.parse(options, args);
-        } catch (MissingArgumentException ex) {
+        } catch (ParseException ex) {
             System.out.println("");
             LOG.error(ex.getLocalizedMessage());
             HelpFormatter formatter = new HelpFormatter();
@@ -268,6 +270,10 @@ public class Client {
                 addContainer(cmd, c, svc);
             } else if (cmd.hasOption(GET_CONTAINER)) {
                 getContainer(cmd, c, svc);
+            } else if (cmd.hasOption(HiinoonoOptions.STOP_CONTAINER)) {
+                stopContainer(cmd, c, svc);
+            } else if (cmd.hasOption(HiinoonoOptions.DELETE_CONTAINER)) {
+                deleteContainer(cmd, c, svc);
             }
 
         } catch (WebApplicationException ex) {
@@ -606,6 +612,72 @@ public class Client {
                 = container.getTenantUserName(tenantName, userName, list.get(0));
         String result = get.getAs(String.class);
         System.out.println("Result: " + result);
+    }
+
+
+    private static void stopContainer(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String name = cmd.getOptionValue(HiinoonoOptions.STOP_CONTAINER);
+        List<String> list = Arrays.asList(name.split("/"));
+
+        // Make list [cn-name/user/tenant] 
+        Collections.reverse(list);
+
+        String tenantName = user.getTenant();
+        String userName = user.getName();
+
+        if (list.size() > 1) {
+            // There is a user option
+            userName = list.get(1);
+        }
+
+        if (list.size() > 2) {
+            // There is a tenant option
+            tenantName = list.get(2);
+        }
+
+        HClient.Container container = HClient.container(c, URI.create(svc));
+        HClient.Container.StopTenantUserName get
+                = container.stopTenantUserName(tenantName, 
+                        userName, list.get(0));
+        
+        get.getAs(String.class);
+
+    }
+
+
+    private static void deleteContainer(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String name = cmd.getOptionValue(HiinoonoOptions.DELETE_CONTAINER);
+        List<String> list = Arrays.asList(name.split("/"));
+
+        // Make list [cn-name/user/tenant] 
+        Collections.reverse(list);
+
+        String tenantName = user.getTenant();
+        String userName = user.getName();
+
+        if (list.size() > 1) {
+            // There is a user option
+            userName = list.get(1);
+        }
+
+        if (list.size() > 2) {
+            // There is a tenant option
+            tenantName = list.get(2);
+        }
+
+        HClient.Container container = HClient.container(c, URI.create(svc));
+        HClient.Container.DeleteTenantUserName get
+                = container.deleteTenantUserName(tenantName, 
+                        userName, list.get(0));
+        
+        get.getAs(String.class);
+
     }
 
 

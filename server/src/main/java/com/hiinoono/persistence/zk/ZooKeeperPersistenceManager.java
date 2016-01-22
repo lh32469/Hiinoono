@@ -24,10 +24,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -464,24 +464,13 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         ZooKeeper zk = zooKeeperClient.getZookeeper();
 
-        List<String> nodes;
-
-        try {
-            nodes = zk.getChildren(ContainerConstants.CONTAINERS, null);
-        } catch (KeeperException | InterruptedException ex) {
-            throw new NotAcceptableException(ex.toString());
-        }
-
-        LOG.info("Known Nodes: " + nodes);
-
-        // Check availablity (Node up?) and utilization and assign a Node
-        // For now, just pick first one.
-        final String nodeID = nodes.get(0);
-        Node node = new Node();
-        node.setId(nodeID);
+        List<Node> nodes = getNodes().collect(Collectors.toList());
+        LOG.info("Available Nodes: " + nodes);
+        int index = new Random().nextInt(nodes.size());
+        Node node = nodes.get(index);
 
         final String path = ContainerConstants.CONTAINERS
-                + "/" + nodeID
+                + "/" + node.getId()
                 + ContainerConstants.NEW
                 + "/" + ContainerUtils.getZKname(c);
 
@@ -510,6 +499,75 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
                     + " already exists.");
         } catch (KeeperException | InterruptedException |
                 JAXBException | GeneralSecurityException ex) {
+            LOG.error(ex.toString(), ex);
+        }
+    }
+
+
+    @Override
+    public void startContainer(Container container) {
+        //To change body of generated methods, choose Tools | Templates.
+        Logger.getLogger(this.getClass().getName()).severe("Not supported yet.");
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+
+    @Override
+    public void stopContainer(Container container) {
+
+        try {
+
+            // Set container state to State.STOP_REQUESTED and
+            // place in ContainerConstants.TRANSITIONING for assigned Node
+            // and NodeContainerWatcher will stop the container and move it
+            // to ContainerConstants.STOPPED
+            ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+            container.setState(State.STOP_REQUESTED);
+
+            final String running = ContainerConstants.CONTAINERS
+                    + "/" + container.getNode().getId()
+                    + ContainerConstants.RUNNING
+                    + "/" + ContainerUtils.getZKname(container);
+
+            zk.delete(running, -1);
+
+            ZKUtils.saveToTransitioning(zk, container);
+
+        } catch (JAXBException |
+                KeeperException |
+                InterruptedException |
+                GeneralSecurityException ex) {
+            LOG.error(ex.toString(), ex);
+        }
+    }
+
+
+    @Override
+    public void deleteContainer(Container container) {
+
+        try {
+
+            // Set container state to State.DELETE_REQUESTED and
+            // place in ContainerConstants.TRANSITIONING for assigned Node
+            // and NodeContainerWatcher will delete the container
+            ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+            container.setState(State.DELETE_REQUESTED);
+
+            final String stopped = ContainerConstants.CONTAINERS
+                    + "/" + container.getNode().getId()
+                    + ContainerConstants.STOPPED
+                    + "/" + ContainerUtils.getZKname(container);
+
+            zk.delete(stopped, -1);
+
+            ZKUtils.saveToTransitioning(zk, container);
+
+        } catch (JAXBException |
+                KeeperException |
+                InterruptedException |
+                GeneralSecurityException ex) {
             LOG.error(ex.toString(), ex);
         }
     }

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.POST;
@@ -21,6 +22,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +76,84 @@ public class ContainerResource {
 
         pm.addContainer(c);
         return c;
+    }
+
+
+    @GET
+    @Path("delete/{tenant}/{user}/{name}")
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN, Roles.T_ADMIN, Roles.USER},
+            message = "You are not permitted to delete a container")
+    public Response delete(@PathParam("tenant") String tenantParam,
+            @PathParam("user") String userParam,
+            @PathParam("name") String containerName) {
+
+        // Principal name is tenant/user
+        String principalName = sc.getUserPrincipal().getName();
+        LOG.trace("Principal Name: " + principalName);
+
+        final String tenantName = principalName.split("/")[0];
+        final String userName = principalName.split("/")[1];
+
+        Container toDelete;
+
+        if (sc.isUserInRole(Roles.H_ADMIN)) {
+            // H_Admin can delete any container
+            toDelete = get(tenantParam, userParam, containerName);
+        } else if (sc.isUserInRole(Roles.T_ADMIN)) {
+            // Ignore Tenant PathParam, can only delete in own tenancy
+            toDelete = get(tenantName, userParam, containerName);
+        } else {
+            // Ignore Tenant and User PathParams, can only view own containers.
+            toDelete = get(tenantName, userName, containerName);
+        }
+
+        if (toDelete.getState().equals(State.RUNNING)) {
+            throw new NotAcceptableException("Container " + containerName
+                    + " is running and needs to be stopped first.");
+        }
+
+        pm.deleteContainer(toDelete);
+
+        return Response.ok().build();
+    }
+
+
+    @GET
+    @Path("stop/{tenant}/{user}/{name}")
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN, Roles.T_ADMIN, Roles.USER},
+            message = "You are not permitted to stop a container")
+    public Response stop(@PathParam("tenant") String tenantParam,
+            @PathParam("user") String userParam,
+            @PathParam("name") String containerName) {
+
+        // Principal name is tenant/user
+        String principalName = sc.getUserPrincipal().getName();
+        LOG.trace("Principal Name: " + principalName);
+
+        final String tenantName = principalName.split("/")[0];
+        final String userName = principalName.split("/")[1];
+
+        Container toStop;
+
+        if (sc.isUserInRole(Roles.H_ADMIN)) {
+            // H_Admin can delete any container
+            toStop = get(tenantParam, userParam, containerName);
+        } else if (sc.isUserInRole(Roles.T_ADMIN)) {
+            // Ignore Tenant PathParam, can only delete in own tenancy
+            toStop = get(tenantName, userParam, containerName);
+        } else {
+            // Ignore Tenant and User PathParams, can only view own containers.
+            toStop = get(tenantName, userName, containerName);
+        }
+
+        if (toStop.getState().equals(State.STOPPED)) {
+            throw new NotAcceptableException("Container " + containerName
+                    + " is already stopped.");
+        }
+
+        pm.stopContainer(toStop);
+
+        return Response.ok().build();
     }
 
 

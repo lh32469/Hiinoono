@@ -129,9 +129,10 @@ public class ContainerStarter extends HystrixCommand<Container> {
                 // Get external IP
                 String addresses = new ShellCommand("hostname -I").execute();
 
-                ip = addresses.split(" ")[0];
+                String externalIP = addresses.split(" ")[0];
 
-                container.setSsh("ssh -p " + port + " ubuntu@" + ip);
+                container.setSsh("ssh -p " + port + " ubuntu@" + externalIP);
+                container.getPortForwardingPairs().add(port + ":" + 22);
                 container.setState(State.RUNNING);
                 container.setLastStarted(Utils.now());
 
