@@ -489,6 +489,11 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         c.setAdded(Utils.now());
         c.setNode(node);
 
+        /*
+         * Container is stored in ZK in the /containers/{nodeId}/new for
+         * the Node the container is assigned to and then NodeContainerWatcher
+         * for that nodes picks it up and creates it.
+         */
         try {
             ByteArrayOutputStream mem = new ByteArrayOutputStream();
             Marshaller marshaller = jc.createMarshaller();
