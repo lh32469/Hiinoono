@@ -39,7 +39,7 @@ public class ZKUtils {
      *
      * For development: Ids.OPEN_ACL_UNSAFE
      */
-    private final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
+    public final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ContainerUtils.class);
@@ -98,8 +98,11 @@ public class ZKUtils {
             JAXBException, KeeperException,
             InterruptedException, GeneralSecurityException {
 
+        LOG.info(path);
+
         Unmarshaller um = jc.createUnmarshaller();
         String json = new String(Utils.decrypt2(zk.getData(path, false, null)));
+        LOG.debug(json);
         return um.unmarshal(new StringReader(json));
     }
 
