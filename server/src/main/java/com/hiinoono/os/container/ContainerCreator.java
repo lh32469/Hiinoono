@@ -3,11 +3,14 @@ package com.hiinoono.os.container;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
+import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import java.security.GeneralSecurityException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
@@ -64,27 +67,52 @@ public class ContainerCreator extends HystrixCommand<Container> {
     protected Container run() throws Exception {
         LOG.info("Creating: " + container.getName());
 
-        container.setState(State.CREATING);
-        // Add to /containers/{nodeId}/transition
-        ZKUtils.savePersistent(zk, container, transitionState);
+        // lxc name (cn-name.user.tenant)
+        final String containerName = ContainerUtils.getZKname(container);
 
-        // Simulate creation
-        Thread.sleep(15000);
-        container.setState(State.CREATED);
+        try {
 
-        // Delete transition state
-        zk.delete(transitionState, -1);
+            container.setState(State.CREATING);
+            // Add to /containers/{nodeId}/transition
+            ZKUtils.savePersistent(zk, container, transitionState);
 
-        // Create and move to /containers/{nodeId}/created
-        final String created = ContainerConstants.CONTAINERS
-                + "/" + Utils.getNodeId()
-                + ContainerConstants.CREATED
-                + "/" + ContainerUtils.getZKname(container);
+            if (System.getProperty("MOCK") == null) {
 
-        ZKUtils.savePersistent(zk, container, created);
+                List<String> command = new LinkedList<>();
+                command.add("lxc-create");
+                command.add("-t");
+                command.add(container.getTemplate());
+                command.add("-n");
+                command.add(containerName);
+                ShellCommand shell = new ShellCommand(command);
+                LOG.info(shell.execute());
 
-        LOG.info("Created " + container.getName());
-        return container;
+                container.setState(State.CREATED);
+
+            } else {
+                // Simulate creation
+                Thread.sleep(15000);
+                container.setState(State.CREATED);
+            }
+
+            // Delete transition state
+            zk.delete(transitionState, -1);
+
+            // Create and move to /containers/{nodeId}/created
+            final String created = ContainerConstants.CONTAINERS
+                    + "/" + Utils.getNodeId()
+                    + ContainerConstants.CREATED
+                    + "/" + containerName;
+
+            ZKUtils.savePersistent(zk, container, created);
+
+            LOG.info("Created " + containerName);
+            return container;
+
+        } catch (Exception ex) {
+            LOG.error(ex.toString());
+            throw ex;
+        }
     }
 
 

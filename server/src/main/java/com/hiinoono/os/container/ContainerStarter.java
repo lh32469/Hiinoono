@@ -3,6 +3,7 @@ package com.hiinoono.os.container;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
+import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
@@ -82,27 +84,83 @@ public class ContainerStarter extends HystrixCommand<Container> {
     protected Container run() throws Exception {
         LOG.info("Starting: " + container.getName());
 
-        container.setState(State.STARTING);
-        ZKUtils.savePersistent(zk, container, transitionState);
+        try {
 
-        // Simulate starting
-        Thread.sleep(15000);
-        container.setState(State.RUNNING);
-        container.setLastStarted(Utils.now());
+            container.setState(State.STARTING);
+            ZKUtils.savePersistent(zk, container, transitionState);
 
-        // Delete transition state
-        zk.delete(transitionState, -1);
+            // lxc name (cn-name.user.tenant)
+            final String containerName = ContainerUtils.getZKname(container);
 
-        // Start and move to /containers/{nodeId}/running
-        final String path = ContainerConstants.CONTAINERS
-                + "/" + Utils.getNodeId()
-                + ContainerConstants.RUNNING
-                + "/" + ContainerUtils.getZKname(container);
+            if (System.getProperty("MOCK") == null) {
 
-        ZKUtils.savePersistent(zk, container, path);
+                new ShellCommand("lxc-start -n " + containerName).execute();
 
-        LOG.info("Started " + container.getName());
-        return container;
+                // Wait for IP address
+                String ip = "";
+
+                while (ip == null || ip.isEmpty()) {
+                    Thread.sleep(2000);
+                    ip = new ShellCommand("lxc-info -i -H -n "
+                            + containerName).execute();
+                }
+
+                container.setIpAddress(ip);
+
+                /// Setup iptables for NAT
+                // Get port
+                String sequence = zk.create("/port",
+                        containerName.getBytes(),
+                        ZKUtils.acl,
+                        CreateMode.PERSISTENT_SEQUENTIAL);
+
+                LOG.info(sequence);
+
+                int port = Integer.parseInt(sequence.replace("/port", ""));
+                port += 12000; // Change this to offset property.
+
+                String iptables = new ShellCommand("iptables -t nat "
+                        + "-A PREROUTING -p tcp -i eth0 --dport "
+                        + port + " -j DNAT --to-destination " + ip + ":22"
+                ).execute();
+
+                LOG.info(iptables);
+
+                // Get external IP
+                String addresses = new ShellCommand("hostname -I").execute();
+
+                ip = addresses.split(" ")[0];
+
+                container.setSsh("ssh -p " + port + " ubuntu@" + ip);
+                container.setState(State.RUNNING);
+                container.setLastStarted(Utils.now());
+
+            } else {
+                // Simulate starting
+                Thread.sleep(15000);
+                container.setState(State.RUNNING);
+                container.setLastStarted(Utils.now());
+            }
+
+            // Delete transition state
+            zk.delete(transitionState, -1);
+
+            // Start and move to /containers/{nodeId}/running
+            final String path = ContainerConstants.CONTAINERS
+                    + "/" + Utils.getNodeId()
+                    + ContainerConstants.RUNNING
+                    + "/" + containerName;
+
+            ZKUtils.savePersistent(zk, container, path);
+
+            LOG.info("Started " + containerName);
+            return container;
+
+        } catch (Exception ex) {
+            LOG.error(ex.toString());
+            throw ex;
+        }
+
     }
 
 
