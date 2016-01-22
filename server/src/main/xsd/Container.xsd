@@ -33,6 +33,15 @@
                         minOccurs="0"
                         maxOccurs="1"
                         type="node"/>
+            <xs:element name="ipAddress"
+                        minOccurs="0"
+                        maxOccurs="1"
+                        type="xs:string"/>
+            <!-- External IP and Port for SSH access -->
+            <xs:element name="ssh"
+                        minOccurs="0"
+                        maxOccurs="1"
+                        type="xs:string"/>
             <xs:element name="added"
                         maxOccurs="1"
                         type="xs:dateTime"/>
