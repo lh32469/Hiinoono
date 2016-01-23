@@ -43,7 +43,7 @@ public class ZKUtils {
     public final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
     final static private org.slf4j.Logger LOG
-            = LoggerFactory.getLogger(ContainerUtils.class);
+            = LoggerFactory.getLogger(ZKUtils.class);
 
 
     static {
