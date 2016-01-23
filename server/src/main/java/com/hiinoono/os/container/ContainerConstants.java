@@ -44,8 +44,8 @@ public interface ContainerConstants {
     public static final String RUNNING = "/running";
 
     /**
-     * Sub path/dir for each node where running containers are placed. Total
-     * path is /containers/{nodeId}/running.
+     * Sub path/dir for each node where stopped containers are placed. Total
+     * path is /containers/{nodeId}/stopped.
      */
     public static final String STOPPED = "/stopped";
 
