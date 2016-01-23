@@ -57,7 +57,7 @@ public class HiinoonoOptions {
         final boolean tAdmin = user.getName().equals("admin");
 
         if (hAdmin) {
-            addHiinooonoAdminOptions(options);
+            addHiinoonoAdminOptions(options);
         } else if (tAdmin) {
             addTenantAdminOptions(options);
         } else {
@@ -94,7 +94,7 @@ public class HiinoonoOptions {
     }
 
 
-    static final void addHiinooonoAdminOptions(Options options) {
+    static final void addHiinoonoAdminOptions(Options options) {
 
         options.addOption("l", LIST, true,
                 "List tenants, nodes, instances, containers ");
