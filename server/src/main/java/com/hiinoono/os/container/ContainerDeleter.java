@@ -11,7 +11,6 @@ import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import java.security.GeneralSecurityException;
 import javax.xml.bind.JAXBException;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.LoggerFactory;
@@ -26,11 +25,6 @@ public class ContainerDeleter extends HystrixCommand<Container> {
     private final Container container;
 
     private final ZooKeeper zk;
-
-    /**
-     * Path to transition state for this Container.
-     */
-    private final String transitionState;
 
     private static final HystrixCommandGroupKey GROUP_KEY
             = HystrixCommandGroupKey.Factory.asKey("Container");
@@ -50,11 +44,6 @@ public class ContainerDeleter extends HystrixCommand<Container> {
 
         this.container = container;
         this.zk = zk;
-
-        transitionState = ContainerConstants.CONTAINERS
-                + "/" + Utils.getNodeId()
-                + ContainerConstants.TRANSITIONING
-                + "/" + ContainerUtils.getZKname(container);
     }
 
 
@@ -75,7 +64,7 @@ public class ContainerDeleter extends HystrixCommand<Container> {
 
                 String ip = container.getIpAddress();
 
-                // 
+                // Cleanup iptables port forwarding entries for this Container.
                 for (String pair : container.getPortForwardingPairs()) {
                     String[] array = pair.split(":");
 
@@ -89,7 +78,6 @@ public class ContainerDeleter extends HystrixCommand<Container> {
                 }
 
             } else {
-                // Simulate stopping
                 LOG.info("Simulated deleting...");
                 Thread.sleep(5000);
             }
@@ -108,14 +96,17 @@ public class ContainerDeleter extends HystrixCommand<Container> {
     @Override
     protected Container getFallback() {
 
-        LOG.error("Error Deleting: " + container.getName());
+        // lxc name (cn-name.user.tenant)
+        final String containerName = ContainerUtils.getZKname(container);
+
+        LOG.error("Error Deleting: " + containerName);
 
         container.setState(State.ERROR);
         // Move to /containers/{nodeId}/errors
         final String errorPath = ContainerConstants.CONTAINERS
                 + "/" + Utils.getNodeId()
                 + ContainerConstants.ERRORS
-                + "/" + ContainerUtils.getZKname(container);
+                + "/" + containerName;
 
         try {
 
