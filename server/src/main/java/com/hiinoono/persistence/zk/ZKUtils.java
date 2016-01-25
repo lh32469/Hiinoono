@@ -99,11 +99,11 @@ public class ZKUtils {
             JAXBException, KeeperException,
             InterruptedException, GeneralSecurityException {
 
-        LOG.info(path);
+        LOG.debug(path);
 
         Unmarshaller um = jc.createUnmarshaller();
         String json = new String(Utils.decrypt2(zk.getData(path, false, null)));
-        LOG.debug(json);
+        LOG.trace(json);
         return um.unmarshal(new StringReader(json));
     }
 
