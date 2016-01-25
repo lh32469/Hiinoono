@@ -141,6 +141,21 @@ public class ZKUtils {
 
 
     /**
+     * Update the date in the given path with the Object provided.
+     */
+    public static void updateData(ZooKeeper zk, Object obj, String path)
+            throws JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
+
+        ByteArrayOutputStream mem = new ByteArrayOutputStream();
+        Marshaller m = jc.createMarshaller();
+        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+        m.marshal(obj, mem);
+        zk.setData(path, Utils.encrypt2(mem.toByteArray()), -1);
+    }
+
+
+    /**
      * Store the Container in the ContainerConstants.TRANSITIONING path for the
      * Node it is currently assigned to.
      */
