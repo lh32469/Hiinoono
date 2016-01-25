@@ -107,9 +107,11 @@ public class ContainerResource {
             toDelete = get(tenantName, userName, containerName);
         }
 
-        if (toDelete.getState().equals(State.RUNNING)) {
+        if (!toDelete.getState().equals(State.STOPPED)
+                && !toDelete.getState().equals(State.ERROR)) {
             throw new NotAcceptableException("Container " + containerName
-                    + " is running and needs to be stopped first.");
+                    + " is currently in state: " + toDelete.getState()
+                    + " and needs to be stopped first.");
         }
 
         pm.deleteContainer(toDelete);
@@ -142,7 +144,7 @@ public class ContainerResource {
             // Ignore Tenant PathParam, can only delete in own tenancy
             toStop = get(tenantName, userParam, containerName);
         } else {
-            // Ignore Tenant and User PathParams, can only view own containers.
+            // Ignore Tenant and User PathParams, can only start own containers.
             toStop = get(tenantName, userName, containerName);
         }
 
@@ -152,6 +154,45 @@ public class ContainerResource {
         }
 
         pm.stopContainer(toStop);
+
+        return Response.ok().build();
+    }
+
+
+    @GET
+    @Path("start/{tenant}/{user}/{name}")
+    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN, Roles.T_ADMIN, Roles.USER},
+            message = "You are not permitted to start a container")
+    public Response start(@PathParam("tenant") String tenantParam,
+            @PathParam("user") String userParam,
+            @PathParam("name") String containerName) {
+
+        // Principal name is tenant/user
+        String principalName = sc.getUserPrincipal().getName();
+        LOG.trace("Principal Name: " + principalName);
+
+        final String tenantName = principalName.split("/")[0];
+        final String userName = principalName.split("/")[1];
+
+        Container toStart;
+
+        if (sc.isUserInRole(Roles.H_ADMIN)) {
+            // H_Admin can start any container
+            toStart = get(tenantParam, userParam, containerName);
+        } else if (sc.isUserInRole(Roles.T_ADMIN)) {
+            // Ignore Tenant PathParam, can only start in own tenancy
+            toStart = get(tenantName, userParam, containerName);
+        } else {
+            // Ignore Tenant and User PathParams, can only start own containers.
+            toStart = get(tenantName, userName, containerName);
+        }
+
+        if (toStart.getState().equals(State.RUNNING)) {
+            throw new NotAcceptableException("Container " + containerName
+                    + " is already running.");
+        }
+
+        pm.startContainer(toStart);
 
         return Response.ok().build();
     }

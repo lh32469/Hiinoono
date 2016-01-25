@@ -469,30 +469,19 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
         int index = new Random().nextInt(nodes.size());
         Node node = nodes.get(index);
 
-        final String path = ContainerConstants.CONTAINERS
-                + "/" + node.getId()
-                + ContainerConstants.NEW
-                + "/" + ContainerUtils.getZKname(c);
-
-        c.setState(State.STOPPED);
+        c.setState(State.CREATE_REQUESTED);
         c.setAdded(Utils.now());
         c.setNode(node);
 
         /*
-         * Container is stored in ZK in the /containers/{nodeId}/new for
+         * Container is stored in ZK in the /containers/{nodeId}/transition for
          * the Node the container is assigned to and then NodeContainerWatcher
          * for that nodes picks it up and creates it.
          */
         try {
-            ByteArrayOutputStream mem = new ByteArrayOutputStream();
-            Marshaller marshaller = jc.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            marshaller.marshal(c, mem);
 
-            zk.create(path, Utils.encrypt2(mem.toByteArray()),
-                    acl, CreateMode.PERSISTENT);
-
-            LOG.info("Adding Container: " + c.getName() + "\n" + mem);
+            ZKUtils.saveToTransitioning(zk, c);
+            LOG.info("Adding Container: " + ContainerUtils.getZKname(c));
 
         } catch (NodeExistsException ex) {
             throw new NotAcceptableException("Container " + c.getName()
@@ -506,9 +495,26 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public void startContainer(Container container) {
-        //To change body of generated methods, choose Tools | Templates.
-        Logger.getLogger(this.getClass().getName()).severe("Not supported yet.");
-        throw new UnsupportedOperationException("Not supported yet.");
+        
+        try {
+
+            // Set container state to State.START_REQUESTED and
+            // place in ContainerConstants.TRANSITIONING for assigned Node
+            // and NodeContainerWatcher will start the container and move it
+            // to ContainerConstants.RUNNING
+            ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+            ZKUtils.deleteCurrentState(zk, container);
+            container.setState(State.START_REQUESTED);
+            ZKUtils.saveToTransitioning(zk, container);
+
+        } catch (JAXBException |
+                KeeperException |
+                InterruptedException |
+                GeneralSecurityException ex) {
+            LOG.error(ex.toString(), ex);
+        }
+        
     }
 
 
@@ -523,15 +529,8 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             // to ContainerConstants.STOPPED
             ZooKeeper zk = zooKeeperClient.getZookeeper();
 
+            ZKUtils.deleteCurrentState(zk, container);
             container.setState(State.STOP_REQUESTED);
-
-            final String running = ContainerConstants.CONTAINERS
-                    + "/" + container.getNode().getId()
-                    + ContainerConstants.RUNNING
-                    + "/" + ContainerUtils.getZKname(container);
-
-            zk.delete(running, -1);
-
             ZKUtils.saveToTransitioning(zk, container);
 
         } catch (JAXBException |
@@ -553,15 +552,8 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             // and NodeContainerWatcher will delete the container
             ZooKeeper zk = zooKeeperClient.getZookeeper();
 
+            ZKUtils.deleteCurrentState(zk, container);
             container.setState(State.DELETE_REQUESTED);
-
-            final String stopped = ContainerConstants.CONTAINERS
-                    + "/" + container.getNode().getId()
-                    + ContainerConstants.STOPPED
-                    + "/" + ContainerUtils.getZKname(container);
-
-            zk.delete(stopped, -1);
-
             ZKUtils.saveToTransitioning(zk, container);
 
         } catch (JAXBException |

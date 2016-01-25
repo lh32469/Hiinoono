@@ -141,8 +141,8 @@ public class ZKUtils {
 
 
     /**
-     * Store the Container in the ContainerConstants.TRANSITIONING path for
-     * the Node it is currently assigned to.
+     * Store the Container in the ContainerConstants.TRANSITIONING path for the
+     * Node it is currently assigned to.
      */
     public static void saveToTransitioning(ZooKeeper zk, Container container)
             throws JAXBException, KeeperException,
@@ -154,6 +154,42 @@ public class ZKUtils {
                 + "/" + ContainerUtils.getZKname(container);
 
         ZKUtils.savePersistent(zk, container, transition);
+    }
+
+
+    /**
+     * Store the Container in the State path associated with the current State
+     * of the Container for the Node it is currently assigned to. Example:
+     * /containers/{nodeId}/STOPPED
+     */
+    public static void saveToState(ZooKeeper zk, Container container)
+            throws JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
+
+        final String transition = ContainerConstants.CONTAINERS
+                + "/" + container.getNode().getId()
+                + "/" + container.getState()
+                + "/" + ContainerUtils.getZKname(container);
+
+        ZKUtils.savePersistent(zk, container, transition);
+    }
+
+
+    /**
+     * Delete the Container in the State path associated with the current State
+     * of the Container for the Node it is currently assigned to. Example:
+     * /containers/{nodeId}/STOPPED
+     */
+    public static void deleteCurrentState(ZooKeeper zk, Container container)
+            throws JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
+
+        final String path = ContainerConstants.CONTAINERS
+                + "/" + container.getNode().getId()
+                + "/" + container.getState()
+                + "/" + ContainerUtils.getZKname(container);
+
+        zk.delete(path, -1);
     }
 
 

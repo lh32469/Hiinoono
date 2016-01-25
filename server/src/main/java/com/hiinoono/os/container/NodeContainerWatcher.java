@@ -5,14 +5,12 @@ import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.os.ShellCommand;
-import static com.hiinoono.os.container.ContainerConstants.CONTAINERS;
-import static com.hiinoono.os.container.ContainerConstants.NEW;
-import static com.hiinoono.os.container.ContainerConstants.STATES;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.CreateMode;
@@ -103,8 +101,24 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
                     acl, CreateMode.PERSISTENT);
         }
 
+        List<String> statePaths = new LinkedList<>();
+
+        // Get subset of States for state paths
+        for (State state : State.values()) {
+            String value = state.toString();
+            if (!value.contains("REQUESTED")) {
+                statePaths.add("/" + value);
+            }
+        }
+
+        // Add Transitioning "State"
+        statePaths.add(ContainerConstants.TRANSITIONING);
+
+//        for (String path : statePaths) {
+//            LOG.debug("Create Path: " + path);
+//        }
         // Make sure the state path/dirs exist
-        for (String state : STATES) {
+        for (String state : statePaths) {
             final String path = containerNodePath + state;
             if (zk.exists(path, null) == null) {
                 LOG.info("Creating: " + path);
@@ -114,7 +128,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
         }
 
         // Start watching the state paths/dirs
-        for (String state : STATES) {
+        for (String state : statePaths) {
             zk.getChildren(containerNodePath + state, this);
         }
 
@@ -142,17 +156,19 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
                     final String cPath = event.getPath() + "/" + c;
                     Container container = ZKUtils.loadContainer(zk, cPath);
 
-                    if (path.equals(containerNodePath + NEW)) {
-                        new ContainerCreator(container, zk).queue();
-                        zk.delete(cPath, -1);
-                    } else if (path.equals(containerNodePath + CREATED)) {
-                        new ContainerStarter(container, zk).queue();
-                        zk.delete(cPath, -1);
-                    } else if (path.equals(containerNodePath + TRANSITIONING)) {
+                    if (path.equals(containerNodePath + TRANSITIONING)) {
                         // Get Desired State
                         State state = container.getState();
                         LOG.info("Desired State: " + state);
-                        if (state.equals(State.STOP_REQUESTED)) {
+                        if (state.equals(State.CREATE_REQUESTED)) {
+                            LOG.info(state + ": " + container.getName());
+                            zk.delete(cPath, -1);
+                            new ContainerCreator(container, zk).queue();
+                        } else if (state.equals(State.START_REQUESTED)) {
+                            LOG.info(state + ": " + container.getName());
+                            zk.delete(cPath, -1);
+                            new ContainerStarter(container, zk).queue();
+                        } else if (state.equals(State.STOP_REQUESTED)) {
                             LOG.info(state + ": " + container.getName());
                             zk.delete(cPath, -1);
                             new ContainerStopper(container, zk).queue();

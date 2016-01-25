@@ -1,13 +1,11 @@
 package com.hiinoono.os.container;
 
-import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
-import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import java.security.GeneralSecurityException;
 import javax.xml.bind.JAXBException;
@@ -17,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 
 /**
+ * HystrixCommand for the starting of the Container specified in the
+ * constructor.
  *
  * @author Lyle T Harris
  */
@@ -25,9 +25,6 @@ public class ContainerDeleter extends HystrixCommand<Container> {
     private final Container container;
 
     private final ZooKeeper zk;
-
-    private static final HystrixCommandGroupKey GROUP_KEY
-            = HystrixCommandGroupKey.Factory.asKey("Container");
 
     private static final HystrixCommandProperties.Setter COMMAND_PROPS
             = HystrixCommandProperties.Setter()
@@ -39,7 +36,7 @@ public class ContainerDeleter extends HystrixCommand<Container> {
 
     public ContainerDeleter(Container container, ZooKeeper zk) {
         super(Setter
-                .withGroupKey(GROUP_KEY)
+                .withGroupKey(ContainerConstants.GROUP_KEY)
                 .andCommandPropertiesDefaults(COMMAND_PROPS));
 
         this.container = container;
@@ -56,7 +53,9 @@ public class ContainerDeleter extends HystrixCommand<Container> {
 
         try {
 
-            container.setState(State.STOPPING);
+            container.setState(State.DELETING);
+            // Add to /containers/{nodeId}/DELETING
+            ZKUtils.saveToState(zk, container);
 
             if (System.getProperty("MOCK") == null) {
 
@@ -78,15 +77,18 @@ public class ContainerDeleter extends HystrixCommand<Container> {
                 }
 
             } else {
-                LOG.info("Simulated deleting...");
+                LOG.info("Simulate deleting: " + containerName);
                 Thread.sleep(5000);
             }
+
+            // Delete current state
+            ZKUtils.deleteCurrentState(zk, container);
 
             LOG.info("Deleted " + containerName);
             return container;
 
         } catch (Exception ex) {
-            LOG.error(ex.toString());
+            LOG.error(ex.toString(), ex);
             throw ex;
         }
 
@@ -101,16 +103,11 @@ public class ContainerDeleter extends HystrixCommand<Container> {
 
         LOG.error("Error Deleting: " + containerName);
 
-        container.setState(State.ERROR);
-        // Move to /containers/{nodeId}/errors
-        final String errorPath = ContainerConstants.CONTAINERS
-                + "/" + Utils.getNodeId()
-                + ContainerConstants.ERRORS
-                + "/" + containerName;
-
         try {
 
-            ZKUtils.savePersistent(zk, container, errorPath);
+            // Move to /containers/{nodeId}/ERROR
+            container.setState(State.ERROR);
+            ZKUtils.saveToState(zk, container);
 
         } catch (JAXBException | KeeperException |
                 GeneralSecurityException | InterruptedException ex) {

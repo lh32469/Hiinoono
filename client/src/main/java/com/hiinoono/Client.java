@@ -272,6 +272,8 @@ public class Client {
                 getContainer(cmd, c, svc);
             } else if (cmd.hasOption(HiinoonoOptions.STOP_CONTAINER)) {
                 stopContainer(cmd, c, svc);
+            } else if (cmd.hasOption(HiinoonoOptions.START_CONTAINER)) {
+                startContainer(cmd, c, svc);
             } else if (cmd.hasOption(HiinoonoOptions.DELETE_CONTAINER)) {
                 deleteContainer(cmd, c, svc);
             }
@@ -640,9 +642,9 @@ public class Client {
 
         HClient.Container container = HClient.container(c, URI.create(svc));
         HClient.Container.StopTenantUserName get
-                = container.stopTenantUserName(tenantName, 
+                = container.stopTenantUserName(tenantName,
                         userName, list.get(0));
-        
+
         get.getAs(String.class);
 
     }
@@ -673,11 +675,43 @@ public class Client {
 
         HClient.Container container = HClient.container(c, URI.create(svc));
         HClient.Container.DeleteTenantUserName get
-                = container.deleteTenantUserName(tenantName, 
+                = container.deleteTenantUserName(tenantName,
                         userName, list.get(0));
-        
+
         get.getAs(String.class);
 
+    }
+
+
+    private static void startContainer(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        String name = cmd.getOptionValue(HiinoonoOptions.START_CONTAINER);
+        List<String> list = Arrays.asList(name.split("/"));
+
+        // Make list [cn-name/user/tenant] 
+        Collections.reverse(list);
+
+        String tenantName = user.getTenant();
+        String userName = user.getName();
+
+        if (list.size() > 1) {
+            // There is a user option
+            userName = list.get(1);
+        }
+
+        if (list.size() > 2) {
+            // There is a tenant option
+            tenantName = list.get(2);
+        }
+
+        HClient.Container container = HClient.container(c, URI.create(svc));
+        HClient.Container.StartTenantUserName get
+                = container.startTenantUserName(tenantName,
+                        userName, list.get(0));
+
+        get.getAs(String.class);
     }
 
 

@@ -7,12 +7,9 @@ import com.hiinoono.os.container.ContainerCreator;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -20,7 +17,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
@@ -83,14 +79,14 @@ public class ContainerManager implements Watcher, ContainerConstants {
             zk.create(CONTAINERS, "Initialized".getBytes(),
                     acl, CreateMode.PERSISTENT);
         }
-
-        for (String state : STATES) {
-            if (zk.exists(state, null) == null) {
-                LOG.info("Creating: " + state);
-                zk.create(state, "Initialized".getBytes(),
-                        acl, CreateMode.PERSISTENT);
-            }
-        }
+//
+//        for (String state : STATES) {
+//            if (zk.exists(state, null) == null) {
+//                LOG.info("Creating: " + state);
+//                zk.create(state, "Initialized".getBytes(),
+//                        acl, CreateMode.PERSISTENT);
+//            }
+//        }
 
         // Should eventually move elsewhere
         if (zk.exists(MANAGERS, null) == null) {
@@ -122,10 +118,10 @@ public class ContainerManager implements Watcher, ContainerConstants {
             LOG.info(nodeId + " (Me) is ContainerManager");
             System.out.println("Current ContainerManager");
 
-            // Watch the various states
-            for (String state : STATES) {
-                zk.getChildren(state, this);
-            }
+//            // Watch the various states
+//            for (String state : STATES) {
+//                zk.getChildren(state, this);
+//            }
 
         } catch (KeeperException ex) {
             LOG.info(ex.getLocalizedMessage());
@@ -151,16 +147,17 @@ public class ContainerManager implements Watcher, ContainerConstants {
                         + Utils.getNodeId() + ")", ex);
             }
 
-        } else if (event.getType().equals(EventType.NodeChildrenChanged)
-                && event.getPath().equals(NEW)) {
-            // New -> Created or Error
-            try {
-                startContainer(event);
-            } catch (JAXBException | KeeperException | InterruptedException ex) {
-                throw new IllegalStateException(ex.getLocalizedMessage());
-            }
-
-        }
+        } 
+//        else if (event.getType().equals(EventType.NodeChildrenChanged)
+//                && event.getPath().equals(NEW)) {
+//            // New -> Created or Error
+//            try {
+//                startContainer(event);
+//            } catch (JAXBException | KeeperException | InterruptedException ex) {
+//                throw new IllegalStateException(ex.getLocalizedMessage());
+//            }
+//
+//        }
 
     }
 
