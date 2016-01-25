@@ -11,6 +11,7 @@ import com.hiinoono.os.container.ContainerUtils;
 import com.hiinoono.os.container.GetContainersForNode;
 import com.hiinoono.persistence.PersistenceManager;
 import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
+import com.hiinoono.rest.node.NodeComparator;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -452,8 +453,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
                 && n.getOwner().getName().equals(c.getOwner().getName())
         ).findFirst();
 
-        LOG.info("Dups: " + duplicate);
-
         if (duplicate.isPresent()) {
             throw new NotAcceptableException("Container " + c.getName()
                     + " already exists.");
@@ -463,8 +462,9 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         List<Node> nodes = getNodes().collect(Collectors.toList());
         LOG.info("Available Nodes: " + nodes);
-        int index = new Random().nextInt(nodes.size());
-        Node node = nodes.get(index);
+
+        Collections.sort(nodes, new NodeComparator());
+        Node node = nodes.get(0);
 
         c.setState(State.CREATE_REQUESTED);
         c.setAdded(Utils.now());
@@ -480,9 +480,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             ZKUtils.saveToTransitioning(zk, c);
             LOG.info("Adding Container: " + ContainerUtils.getZKname(c));
 
-        } catch (NodeExistsException ex) {
-            throw new NotAcceptableException("Container " + c.getName()
-                    + " already exists.");
         } catch (KeeperException | InterruptedException |
                 JAXBException | GeneralSecurityException ex) {
             LOG.error(ex.toString(), ex);
