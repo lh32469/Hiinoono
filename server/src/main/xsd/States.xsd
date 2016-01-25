@@ -25,6 +25,7 @@
             <xs:enumeration value="STOPPING"/>
             <xs:enumeration value="STOPPED"/>
             <xs:enumeration value="DELETE_REQUESTED"/>
+            <xs:enumeration value="DELETING"/>
             <xs:enumeration value="WARNING"/>
             <xs:enumeration value="ERROR"/>
         </xs:restriction>
