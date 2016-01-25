@@ -454,7 +454,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
         LOG.info("Dups: " + duplicate);
 
-        if (!duplicate.isPresent()) {
+        if (duplicate.isPresent()) {
             throw new NotAcceptableException("Container " + c.getName()
                     + " already exists.");
         }
