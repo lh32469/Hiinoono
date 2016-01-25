@@ -445,19 +445,16 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
     @Override
     public void addContainer(Container c) {
 
-        // TODO: Need to check all paths to see if 
-        // this Container already exists.
-        // Different Tenants/Users should be able to create
-        // Containers of the same name.
-        List<Container> dups = getContainers().filter(
+        // Check if already exists.
+        Optional<Container> duplicate = getContainers().filter(
                 n -> n.getName().equals(c.getName())
                 && n.getOwner().getTenant().equals(c.getOwner().getTenant())
                 && n.getOwner().getName().equals(c.getOwner().getName())
-        ).collect(Collectors.toList());
+        ).findFirst();
 
-        LOG.info("Dups: " + dups);
+        LOG.info("Dups: " + duplicate);
 
-        if (!dups.isEmpty()) {
+        if (!duplicate.isPresent()) {
             throw new NotAcceptableException("Container " + c.getName()
                     + " already exists.");
         }
@@ -495,7 +492,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public void startContainer(Container container) {
-        
+
         try {
 
             // Set container state to State.START_REQUESTED and
@@ -514,7 +511,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
                 GeneralSecurityException ex) {
             LOG.error(ex.toString(), ex);
         }
-        
+
     }
 
 
