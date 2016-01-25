@@ -172,12 +172,10 @@ public class ContainerResource {
 
         // Principal name is tenant/user
         String principalName = sc.getUserPrincipal().getName();
-        LOG.trace("Principal Name: " + principalName);
+        LOG.debug("Principal Name: " + principalName);
 
         final String tenantName = principalName.split("/")[0];
         final String userName = principalName.split("/")[1];
-
-        LOG.debug(tenantName);
 
         List<Container> list;
 
