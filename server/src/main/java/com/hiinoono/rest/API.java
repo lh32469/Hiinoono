@@ -15,12 +15,14 @@ import com.hiinoono.rest.container.ContainerResource;
 import com.hiinoono.rest.exceptions.ClientErrorExceptionMapper;
 import com.hiinoono.rest.exceptions.DefaultExceptionMapper;
 import com.hiinoono.rest.node.NodeResource;
+import com.hiinoono.rest.node.NodeStatTimerTask;
 import com.hiinoono.rest.site.SiteResource;
 import com.hiinoono.rest.tenant.TenantResource;
 import com.hiinoono.rest.user.UserResource;
 import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Timer;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -104,6 +106,11 @@ public class API extends ResourceConfig {
                             = new ZooKeeperClient(zooKeepers, "Welcome1");
                     bind(zkc);
                     bind(new NodeContainerWatcher(zkc));
+
+                    Timer timer = new Timer();
+                    NodeStatTimerTask stats = new NodeStatTimerTask(zkc);
+                    timer.scheduleAtFixedRate(stats, 30000, 30000);
+
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
                 } catch (IOException |

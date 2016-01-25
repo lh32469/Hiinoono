@@ -9,8 +9,8 @@ import com.hiinoono.jaxb.User;
 import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.os.container.ContainerUtils;
 import com.hiinoono.os.container.GetContainersForNode;
-import com.hiinoono.os.container.NodeContainerWatcher;
 import com.hiinoono.persistence.PersistenceManager;
+import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -272,12 +272,12 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             ZooKeeper zk = zooKeeperClient.getZookeeper();
             List<Node> nodes = new LinkedList<>();
             List<String> names
-                    = zk.getChildren(NodeContainerWatcher.NODES, false);
+                    = zk.getChildren(NODES, false);
             LOG.info(names.toString());
 
             for (String name : names) {
                 nodes.add(ZKUtils.loadNode(zk,
-                        NodeContainerWatcher.NODES + "/" + name));
+                        NODES + "/" + name));
             }
 
             return nodes.stream();

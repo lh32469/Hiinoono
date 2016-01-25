@@ -2,16 +2,16 @@ package com.hiinoono.os.container;
 
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Container;
-import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.State;
-import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
+import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import javax.inject.Inject;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -31,11 +31,6 @@ import org.slf4j.LoggerFactory;
  * @author Lyle T Harris
  */
 public class NodeContainerWatcher implements Watcher, ContainerConstants {
-
-    /**
-     * Top-level ZK path/dir for Node registration.
-     */
-    public static final String NODES = "/nodes";
 
     /**
      * ZK path associated with this Node in the /container path/dir.
@@ -74,18 +69,6 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
             zk.create(NODES, "Initialized".getBytes(),
                     acl, CreateMode.PERSISTENT);
         }
-
-        Node node = new Node();
-        node.setId(Utils.getNodeId());
-        node.setJoined(Utils.now());
-        ShellCommand hostname = new ShellCommand("hostname");
-        node.setHostname(hostname.execute());
-
-        final String nodeStatus = NODES + "/" + Utils.getNodeId();
-        if (zk.exists(nodeStatus, null) != null) {
-            zk.delete(nodeStatus, -1);
-        }
-        ZKUtils.saveEphemeral(zk, node, nodeStatus);
 
         if (zk.exists(CONTAINERS, null) == null) {
             LOG.info("Creating: " + CONTAINERS);
@@ -141,7 +124,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
         final EventType type = event.getType();
         final String path = event.getPath();
-
+        
         try {
             if (EventType.NodeChildrenChanged.equals(type)) {
 
