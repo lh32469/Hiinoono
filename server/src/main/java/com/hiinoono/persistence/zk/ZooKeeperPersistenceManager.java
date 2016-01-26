@@ -6,12 +6,12 @@ import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
+import com.hiinoono.managers.PlacementManager;
 import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.os.container.ContainerUtils;
 import com.hiinoono.os.container.GetContainersForNode;
 import com.hiinoono.persistence.PersistenceManager;
 import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
-import com.hiinoono.rest.node.NodeComparator;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -25,12 +25,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -458,32 +456,27 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
                     + " already exists.");
         }
 
-        ZooKeeper zk = zooKeeperClient.getZookeeper();
-
-        List<Node> nodes = getNodes().collect(Collectors.toList());
-        LOG.info("Available Nodes: " + nodes);
-
-        Collections.sort(nodes, new NodeComparator());
-        Node node = nodes.get(0);
-
         c.setState(State.CREATE_REQUESTED);
         c.setAdded(Utils.now());
-        c.setNode(node);
 
-        /*
-         * Container is stored in ZK in the /containers/{nodeId}/transition for
-         * the Node the container is assigned to and then NodeContainerWatcher
-         * for that nodes picks it up and creates it.
-         */
         try {
 
-            ZKUtils.saveToTransitioning(zk, c);
-            LOG.info("Adding Container: " + ContainerUtils.getZKname(c));
+            ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+            final String zkName = ContainerUtils.getZKname(c);
+
+            LOG.info("Adding Container: " + zkName);
+
+            // Hand-off to PlacementManager
+            ZKUtils.savePersistent(zk, c,
+                    PlacementManager.TO_BE_PLACED_NODEPATH
+                    + "/" + zkName);
 
         } catch (KeeperException | InterruptedException |
                 JAXBException | GeneralSecurityException ex) {
             LOG.error(ex.toString(), ex);
         }
+        
     }
 
 

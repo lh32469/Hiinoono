@@ -17,12 +17,6 @@ public interface ContainerConstants {
             = HystrixCommandGroupKey.Factory.asKey("Container");
 
     /**
-     * Top level path/dir for various cluster-wide managers to register
-     * themselves. Need to find a better home for this at some point.
-     */
-    String MANAGERS = "/managers";
-
-    /**
      * Top level path/dir for Nodes to register and get Containers assigned.
      */
     String CONTAINERS = "/containers";

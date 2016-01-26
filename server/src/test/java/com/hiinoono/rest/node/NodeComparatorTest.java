@@ -5,6 +5,7 @@
  */
 package com.hiinoono.rest.node;
 
+import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -71,7 +72,7 @@ public class NodeComparatorTest {
         nodes.add(n2);
         nodes.add(n3);
 
-        Collections.sort(nodes, new NodeComparator());
+        Collections.sort(nodes, new NodeComparator(new Container()));
         System.out.println("1st: " + nodes.get(0).getHostname());
 
         // Most memory wins for now.

@@ -9,18 +9,19 @@ import com.hiinoono.os.container.ContainerUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
@@ -29,18 +30,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author Lyle T Harris
  */
-public class ZKUtils {
+public class ZKUtils implements ZooKeeperConstants {
 
     private static JAXBContext jc;
-
-    /**
-     * ACL to create nodes with.
-     *
-     * For private: Ids.CREATOR_ALL_ACL
-     *
-     * For development: Ids.OPEN_ACL_UNSAFE
-     */
-    public final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ZKUtils.class);
@@ -120,7 +112,7 @@ public class ZKUtils {
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         m.marshal(obj, mem);
         zk.create(path, Utils.encrypt2(mem.toByteArray()),
-                acl, CreateMode.PERSISTENT);
+                ACL, CreateMode.PERSISTENT);
     }
 
 
@@ -136,7 +128,7 @@ public class ZKUtils {
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         m.marshal(obj, mem);
         zk.create(path, Utils.encrypt2(mem.toByteArray()),
-                acl, CreateMode.EPHEMERAL);
+                ACL, CreateMode.EPHEMERAL);
     }
 
 
@@ -205,6 +197,36 @@ public class ZKUtils {
                 + "/" + ContainerUtils.getZKname(container);
 
         zk.delete(path, -1);
+    }
+
+
+    /**
+     * Get Stream of all Nodes.
+     *
+     * @return
+     */
+    public static Stream<Node> getNodes(ZooKeeper zk) {
+
+        try {
+
+            List<Node> nodes = new LinkedList<>();
+            List<String> names = zk.getChildren(NODES, false);
+            LOG.info(names.toString());
+
+            for (String name : names) {
+                nodes.add(ZKUtils.loadNode(zk,
+                        NODES + "/" + name));
+            }
+
+            return nodes.stream();
+
+        } catch (KeeperException |
+                JAXBException |
+                GeneralSecurityException |
+                InterruptedException ex) {
+            LOG.error(ex.toString(), ex);
+            return Collections.EMPTY_LIST.stream();
+        }
     }
 
 

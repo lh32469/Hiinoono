@@ -88,12 +88,12 @@ public class ContainerManager implements Watcher, ContainerConstants {
 //            }
 //        }
 
-        // Should eventually move elsewhere
-        if (zk.exists(MANAGERS, null) == null) {
-            LOG.info("Creating: " + MANAGERS);
-            zk.create(MANAGERS, "Initialized".getBytes(),
-                    acl, CreateMode.PERSISTENT);
-        }
+//        // Should eventually move elsewhere
+//        if (zk.exists(MANAGERS, null) == null) {
+//            LOG.info("Creating: " + MANAGERS);
+//            zk.create(MANAGERS, "Initialized".getBytes(),
+//                    acl, CreateMode.PERSISTENT);
+//        }
 
         takeover();
     }

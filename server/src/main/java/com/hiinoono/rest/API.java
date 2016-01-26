@@ -1,5 +1,6 @@
 package com.hiinoono.rest;
 
+import com.hiinoono.managers.PlacementManager;
 import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.os.VirtualMachineDriver;
 import com.hiinoono.os.container.NodeContainerWatcher;
@@ -105,14 +106,17 @@ public class API extends ResourceConfig {
                     ZooKeeperClient zkc
                             = new ZooKeeperClient(zooKeepers, "Welcome1");
                     bind(zkc);
-                    bind(new NodeContainerWatcher(zkc));
+
+                    new NodeContainerWatcher(zkc);
+                    bind(new PlacementManager(zkc));
 
                     Timer timer = new Timer();
                     NodeStatTimerTask stats = new NodeStatTimerTask(zkc);
-                    timer.scheduleAtFixedRate(stats, 30000, 30000);
+                    timer.scheduleAtFixedRate(stats, 10, 30000);
 
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
+                    
                 } catch (IOException |
                         KeeperException |
                         JAXBException |
