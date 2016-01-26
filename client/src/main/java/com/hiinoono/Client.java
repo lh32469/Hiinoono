@@ -9,6 +9,7 @@ import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.rest.api.model.HClient;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -18,14 +19,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.CommandLine;
@@ -35,6 +42,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.slf4j.LoggerFactory;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -471,7 +479,7 @@ public class Client {
         newTenant.setName(name);
 
         /* 
-         * Use the JSON option since the XML/JAXB option fails since 
+         * Use the XML option since the XML/JAXB option fails since 
          * when the WADL is compiled the @XmlRootElement(name = "tenant")
          * doesn't get added to the generated class.
          */
@@ -500,7 +508,7 @@ public class Client {
         _user.setName(newUserName);
 
         /* 
-         * Use the JSON option since the XML/JAXB option fails since 
+         * Use the XML option since the XML/JAXB option fails since 
          * when the WADL is compiled the @XmlRootElement(name = "user")
          * doesn't get added to the generated class.
          */
@@ -609,11 +617,17 @@ public class Client {
             tenantName = list.get(2);
         }
 
-        HClient.Container container = HClient.container(c, URI.create(svc));
+        HClient.Container cRequest = HClient.container(c, URI.create(svc));
         HClient.Container.GetTenantUserName get
-                = container.getTenantUserName(tenantName, userName, list.get(0));
-        String result = get.getAs(String.class);
-        System.out.println("Result: " + result);
+                = cRequest.getTenantUserName(tenantName, userName, list.get(0));
+
+        if (cmd.hasOption(HiinoonoOptions.XML)) {
+            // Default from server is XML
+            System.out.print(get.getAs(String.class));
+        } else {
+            marshallAsJson(get.getAsContainer());
+        }
+
     }
 
 
@@ -712,6 +726,27 @@ public class Client {
                         userName, list.get(0));
 
         get.getAs(String.class);
+    }
+
+
+    private static void marshallAsJson(Object jaxb) {
+
+        final Class[] classes = {Container.class, Tenant.class, Node.class};
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("eclipselink.media-type", "application/json");
+
+        try {
+            JAXBContext jc
+                    = JAXBContextFactory.createContext(classes, properties);
+
+            Marshaller m = jc.createMarshaller();
+            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            m.marshal(jaxb, System.out);
+            System.out.println("");
+
+        } catch (JAXBException ex) {
+            LOG.error(ex.toString());
+        }
     }
 
 

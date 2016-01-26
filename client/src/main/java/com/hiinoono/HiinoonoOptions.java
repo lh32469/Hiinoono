@@ -12,29 +12,31 @@ import org.apache.commons.cli.OptionGroup;
  */
 public class HiinoonoOptions {
 
-    private static final String LIST = "list";
+    static final String LIST = "list";
 
-    private static final String LOGGING = "log";
+    static final String LOGGING = "log";
 
-    private static final String SERVICE = "service";
+    static final String SERVICE = "service";
 
-    private static final String PROXY = "proxy";
+    static final String PROXY = "proxy";
 
-    private static final String HELP = "help";
+    static final String HELP = "help";
 
-    private static final String VERSION = "version";
+    static final String VERSION = "version";
 
-    private static final String ADD_TENANT = "addTenant";
+    static final String XML = "xml";
 
-    private static final String ADD_USER = "addUser";
+    static final String ADD_TENANT = "addTenant";
 
-    private static final String DELETE_TENANT = "deleteTenant";
+    static final String ADD_USER = "addUser";
 
-    private static final String DELETE_USER = "deleteUser";
+    static final String DELETE_TENANT = "deleteTenant";
 
-    private static final String SAMPLE_VM = "sampleVm";
+    static final String DELETE_USER = "deleteUser";
 
-    private static final String ADD_VM = "addVm";
+    static final String SAMPLE_VM = "sampleVm";
+
+    static final String ADD_VM = "addVm";
 
     static final String ADD_CONTAINER = "addContainer";
 
@@ -46,7 +48,7 @@ public class HiinoonoOptions {
 
     static final String GET_CONTAINER = "getContainer";
 
-    private static final String API = "HIINOONO_SERVICE";
+    static final String API = "HIINOONO_SERVICE";
 
 
     static final Options getOptions(User user) {
@@ -69,6 +71,9 @@ public class HiinoonoOptions {
 
         options.addOption("v", VERSION, false,
                 "Display version.");
+
+        options.addOption("x", XML, false,
+                "Output in XML where applicable.");
 
         options.addOption("L", LOGGING, false,
                 "Enable org.glassfish.jersey.filter.LoggingFilter");
@@ -169,23 +174,7 @@ public class HiinoonoOptions {
     static final void addUserOptions(Options options) {
 
         options.addOption("l", LIST, true,
-                "List instances, containers ");
-
-        Option addVm = Option.builder()
-                .hasArgs()
-                .argName("fileName")
-                .longOpt(ADD_VM)
-                .desc("Add a new Virtual Machine.")
-                .build();
-        options.addOption(addVm);
-
-        Option sampleVm = Option.builder()
-                .hasArgs()
-                .argName("xml|json")
-                .longOpt(SAMPLE_VM)
-                .desc("Display Sample Virtual Machine.")
-                .build();
-        options.addOption(sampleVm);
+                "List containers ");
 
         Option addContainer = Option.builder()
                 .hasArgs()
@@ -204,7 +193,7 @@ public class HiinoonoOptions {
         options.addOption(getContainer);
 
         OptionGroup group = new OptionGroup();
-               
+
         Option stopContainer = Option.builder()
                 .hasArgs()
                 .argName("container")
@@ -228,8 +217,8 @@ public class HiinoonoOptions {
                 .desc("Delete a Container.")
                 .build();
         group.addOption(deleteContainer);
-        
-         options.addOptionGroup(group);
+
+        options.addOptionGroup(group);
 
     }
 
