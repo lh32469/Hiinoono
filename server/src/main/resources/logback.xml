@@ -78,7 +78,7 @@
         </triggeringPolicy>
 
         <encoder>
-            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+            <pattern>%d{dd MMM HH:mm:ss} [%thread] %-5level %C{0} %M %msg%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>DEBUG</level>
