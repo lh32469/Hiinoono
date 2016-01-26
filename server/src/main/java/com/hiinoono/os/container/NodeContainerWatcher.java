@@ -11,13 +11,13 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import javax.inject.Inject;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
+import static org.apache.zookeeper.Watcher.Event.EventType.NodeChildrenChanged;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
@@ -97,9 +97,6 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
         // Add Transitioning "State"
         statePaths.add(ContainerConstants.TRANSITIONING);
 
-//        for (String path : statePaths) {
-//            LOG.debug("Create Path: " + path);
-//        }
         // Make sure the state path/dirs exist
         for (String state : statePaths) {
             final String path = containerNodePath + state;
@@ -124,46 +121,17 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
 
         final EventType type = event.getType();
         final String path = event.getPath();
-        
+
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
+
         try {
-            if (EventType.NodeChildrenChanged.equals(type)) {
 
-                ZooKeeper zk = zooKeeperClient.getZookeeper();
-
+            if (NodeChildrenChanged.equals(type)
+                    && path.equals(containerNodePath + TRANSITIONING)) {
+                transition(zk, path, event);
+            } else {
                 // Reset this Watcher
-                List<String> containers = zk.getChildren(path, this);
-                LOG.debug("Containers: " + containers);
-
-                for (String c : containers) {
-
-                    final String cPath = event.getPath() + "/" + c;
-                    Container container = ZKUtils.loadContainer(zk, cPath);
-
-                    if (path.equals(containerNodePath + TRANSITIONING)) {
-                        // Get Desired State
-                        State state = container.getState();
-                        LOG.info("Desired State: " + state);
-                        if (state.equals(State.CREATE_REQUESTED)) {
-                            LOG.info(state + ": " + container.getName());
-                            zk.delete(cPath, -1);
-                            new ContainerCreator(container, zk).queue();
-                        } else if (state.equals(State.START_REQUESTED)) {
-                            LOG.info(state + ": " + container.getName());
-                            zk.delete(cPath, -1);
-                            new ContainerStarter(container, zk).queue();
-                        } else if (state.equals(State.STOP_REQUESTED)) {
-                            LOG.info(state + ": " + container.getName());
-                            zk.delete(cPath, -1);
-                            new ContainerStopper(container, zk).queue();
-                        } else if (state.equals(State.DELETE_REQUESTED)) {
-                            LOG.info(state + ": " + container.getName());
-                            zk.delete(cPath, -1);
-                            new ContainerDeleter(container, zk).queue();
-                        }
-                    }
-
-                }
-
+                zk.getChildren(path, this);
             }
 
         } catch (JAXBException |
@@ -173,6 +141,45 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
             LOG.error(ex.toString(), ex);
         }
 
+    }
+
+
+    /**
+     * Check the TRANSITIONING node path to see if there are any Containers that
+     * need to be handled.
+     */
+    private void transition(ZooKeeper zk,
+            final String path, WatchedEvent event) throws
+            InterruptedException, KeeperException,
+            GeneralSecurityException, JAXBException {
+
+        // Get container names and reset this Watcher
+        List<String> containers = zk.getChildren(path, this);
+        LOG.debug("Containers: " + containers);
+
+        for (String containerName : containers) {
+
+            final String cPath = event.getPath() + "/" + containerName;
+            Container container = ZKUtils.loadContainer(zk, cPath);
+
+            // Get Desired State
+            State state = container.getState();
+            LOG.info(state + ": " + ContainerUtils.getZKname(container));
+            if (state.equals(State.CREATE_REQUESTED)) {
+                zk.delete(cPath, -1);
+                new ContainerCreator(container, zk).queue();
+            } else if (state.equals(State.START_REQUESTED)) {
+                zk.delete(cPath, -1);
+                new ContainerStarter(container, zk).queue();
+            } else if (state.equals(State.STOP_REQUESTED)) {
+                zk.delete(cPath, -1);
+                new ContainerStopper(container, zk).queue();
+            } else if (state.equals(State.DELETE_REQUESTED)) {
+                zk.delete(cPath, -1);
+                new ContainerDeleter(container, zk).queue();
+            }
+
+        }
     }
 
 
