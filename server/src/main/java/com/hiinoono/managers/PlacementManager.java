@@ -49,7 +49,10 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
     private final String managerNodePath;
 
     final static private org.slf4j.Logger LOG
-            = LoggerFactory.getLogger(ContainerManager.class);
+            = LoggerFactory.getLogger(PlacementManager.class);
+
+    final static private org.slf4j.Logger CONTAINER_LOG
+            = LoggerFactory.getLogger(ContainerUtils.class);
 
 
     public PlacementManager(ZooKeeperClient zkc) throws
@@ -166,9 +169,10 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
             KeeperException, InterruptedException, GeneralSecurityException {
 
         LOG.info(ContainerUtils.getZKname(container));
+        CONTAINER_LOG.info(ContainerUtils.getZKname(container));
         final ZooKeeper zk = zooKeeperClient.getZookeeper();
         List<Node> nodes = ZKUtils.getNodes(zk).collect(Collectors.toList());
-        
+
         // Sort the Nodes based on the best fit for this Container
         Collections.sort(nodes, new NodeComparator(container));
         container.setNode(nodes.get(0));
