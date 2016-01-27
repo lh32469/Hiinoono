@@ -93,7 +93,7 @@ public class ShellCommand extends HystrixCommand<String> {
     @Override
     protected String run() throws Exception {
 
-        LOG.info(command.toString());
+        LOG.debug(command.toString());
         StringBuilder sb = new StringBuilder();
 
         try {
@@ -105,7 +105,7 @@ public class ShellCommand extends HystrixCommand<String> {
             BufferedReader br = new BufferedReader(isr);
             String line;
             while ((line = br.readLine()) != null) {
-                LOG.debug(line);
+                LOG.trace(line);
                 sb.append(line);
                 sb.append("\n");
             }
