@@ -60,16 +60,21 @@ public class ContainerCreator extends HystrixCommand<Container> {
 
             if (System.getProperty("MOCK") == null) {
 
+                // TODO: Create user and then container under that user.
                 List<String> command = new LinkedList<>();
                 command.add("lxc-create");
                 command.add("-t");
                 command.add(container.getTemplate());
                 command.add("-n");
                 command.add(containerName);
+                command.add("-B");
+                command.add("lvm");
+                command.add("--vgname");
+                command.add("hiinoono");
                 ShellCommand shell = new ShellCommand(command);
                 LOG.info(shell.execute());
 
-            } else {
+           } else {
                 LOG.info("Simulate creating: " + containerName);
                 Thread.sleep(5000);
             }
