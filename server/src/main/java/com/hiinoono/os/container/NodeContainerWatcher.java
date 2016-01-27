@@ -5,10 +5,10 @@ import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
+import static com.hiinoono.persistence.zk.ZooKeeperConstants.ACL;
 import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.bind.JAXBException;
@@ -18,9 +18,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import static org.apache.zookeeper.Watcher.Event.EventType.NodeChildrenChanged;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.LoggerFactory;
 
 
@@ -37,15 +35,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
      */
     private final String containerNodePath;
 
-    /**
-     * ACL to create nodes with.
-     *
-     * For private: Ids.CREATOR_ALL_ACL
-     *
-     * For development: Ids.OPEN_ACL_UNSAFE
-     */
-    private final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
+    
     /**
      * ZooKeeper (zk) cannot be a field in case of session timeouts so should be
      * fetched from ZooKeeperClient whenever needed. Session reconnecting is
@@ -67,13 +57,13 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
         if (zk.exists(NODES, null) == null) {
             LOG.info("Creating: " + NODES);
             zk.create(NODES, "Initialized".getBytes(),
-                    acl, CreateMode.PERSISTENT);
+                    ACL, CreateMode.PERSISTENT);
         }
 
         if (zk.exists(CONTAINERS, null) == null) {
             LOG.info("Creating: " + CONTAINERS);
             zk.create(CONTAINERS, "Initialized".getBytes(),
-                    acl, CreateMode.PERSISTENT);
+                    ACL, CreateMode.PERSISTENT);
         }
 
         // Create path for this Node
@@ -81,7 +71,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
         if (zk.exists(containerNodePath, null) == null) {
             LOG.info("Creating: " + containerNodePath);
             zk.create(containerNodePath, "Initialized".getBytes(),
-                    acl, CreateMode.PERSISTENT);
+                    ACL, CreateMode.PERSISTENT);
         }
 
         List<String> statePaths = new LinkedList<>();
@@ -103,7 +93,7 @@ public class NodeContainerWatcher implements Watcher, ContainerConstants {
             if (zk.exists(path, null) == null) {
                 LOG.info("Creating: " + path);
                 zk.create(path, "Initialized".getBytes(),
-                        acl, CreateMode.PERSISTENT);
+                        ACL, CreateMode.PERSISTENT);
             }
         }
 

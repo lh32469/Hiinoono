@@ -1,51 +1,74 @@
-package com.hiinoono.rest.node;
+package com.hiinoono.os.container;
 
-import com.hiinoono.Utils;
+import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
+import com.hiinoono.jaxb.State;
+import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
-import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
+import static com.hiinoono.persistence.zk.ZooKeeperConstants.ACL;
+import static com.hiinoono.persistence.zk.ZooKeeperConstants.STATS;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
+import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
 
 /**
- * Updates ZooKeeper with statistics for current node.
+ * Updates ZooKeeper with statistics for containers assigned to the current
+ * node.
  *
  * @author Lyle T Harris
  */
-public class NodeStatTimerTask extends TimerTask {
+public class ContainerStatTimerTask extends TimerTask {
+
+    static final Pattern STATE
+            = Pattern.compile("State:\\s+(.*)");
+
+    static final Pattern CPU_USAGE
+            = Pattern.compile("CPU use:\\s+(.*)");
+
+    static final Pattern MEMORY_USAGE
+            = Pattern.compile("Memory use:\\s+(.*)");
+
+    static final Pattern BLKIO_USAGE
+            = Pattern.compile("BlkIO use:\\s+(.*)");
+
+    static final Pattern TX_BYTES
+            = Pattern.compile("TX bytes:\\s+(.*)");
+
+    static final Pattern RX_BYTES
+            = Pattern.compile("RX bytes:\\s+(.*)");
+
+    static final Pattern LINK
+            = Pattern.compile("Link:\\s+(.*)");
 
     private final ZooKeeperClient zooKeeperClient;
 
-    private final static Path MEM_INFO = Paths.get("/proc/meminfo");
-
-    private final static ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
     private final static org.slf4j.Logger LOG
-            = LoggerFactory.getLogger(NodeStatTimerTask.class);
+            = LoggerFactory.getLogger(ContainerStatTimerTask.class);
 
 
-    public NodeStatTimerTask() {
+    public ContainerStatTimerTask() {
         this.zooKeeperClient = null;
     }
 
 
-    public NodeStatTimerTask(ZooKeeperClient zooKeeperClient) throws
+    public ContainerStatTimerTask(ZooKeeperClient zooKeeperClient) throws
             KeeperException, InterruptedException,
             JAXBException, GeneralSecurityException {
 
@@ -53,65 +76,106 @@ public class NodeStatTimerTask extends TimerTask {
 
         ZooKeeper zk = zooKeeperClient.getZookeeper();
 
-        if (zk.exists(NODES, null) == null) {
-            LOG.info("Creating: " + NODES);
-            zk.create(NODES, "Initialized".getBytes(),
-                    acl, CreateMode.PERSISTENT);
+        if (zk.exists(STATS, null) == null) {
+            LOG.info("Creating: " + STATS);
+            zk.create(STATS, "Initialized".getBytes(),
+                    ACL, CreateMode.PERSISTENT);
         }
 
-        Node node = new Node();
-        node.setId(Utils.getNodeId());
-        node.setJoined(Utils.now());
-        ShellCommand hostname = new ShellCommand("hostname");
-        node.setHostname(hostname.execute());
-
-        final String nodeStatus = NODES + "/" + Utils.getNodeId();
-        if (zk.exists(nodeStatus, null) != null) {
-            zk.delete(nodeStatus, -1);
-        }
-
-        LOG.info("Started: " + nodeStatus);
-        ZKUtils.saveEphemeral(zk, node, nodeStatus);
     }
 
 
     @Override
     public void run() {
 
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
+        String lsContainers;
+
+        boolean mock = System.getProperty("MOCK") != null;
+        final String mockDir = "src/test/resources/containers";
+
         try {
 
-            ZooKeeper zk = zooKeeperClient.getZookeeper();
-
-            final String nodeStatus = NODES + "/" + Utils.getNodeId();
-            Node node = ZKUtils.loadNode(zk, nodeStatus);
-            node.setUpdated(Utils.now());
-
-            if (Files.exists(MEM_INFO, LinkOption.NOFOLLOW_LINKS)) {
-                for (String line : Files.readAllLines(MEM_INFO)) {
-                    LOG.trace(line);
-                    if (line.startsWith("MemTotal")) {
-                        Scanner sc = new Scanner(line);
-                        sc.next();
-                        node.setMemTotal(sc.nextLong());
-                    } else if (line.startsWith("MemAvailable")) {
-                        Scanner sc = new Scanner(line);
-                        sc.next();
-                        node.setMemAvailable(sc.nextLong());
-                    } else if (line.startsWith("SwapTotal")) {
-                        Scanner sc = new Scanner(line);
-                        sc.next();
-                        node.setSwapTotal(sc.nextLong());
-                    } else if (line.startsWith("SwapFree")) {
-                        Scanner sc = new Scanner(line);
-                        sc.next();
-                        node.setSwapFree(sc.nextLong());
-                    }
-                }
+            if (mock) {
+                String cmd = "ls " + mockDir;
+                lsContainers = new ShellCommand(cmd).execute();
+                LOG.info(lsContainers);
             } else {
-                LOG.info("No memory stats, " + MEM_INFO + " not found");
+                lsContainers = new ShellCommand("lxc-ls").execute();
             }
 
-            ZKUtils.updateData(zk, node, nodeStatus);
+            lsContainers = lsContainers.trim();
+            
+            for (String name : lsContainers.split("\\s+")) {
+                
+                if(name.trim().isEmpty()) {
+                    LOG.info("Empty [" + name + "]");
+                    continue;
+                }
+                
+                LOG.info("[" + name + "]");
+
+                Container container = new Container();
+                container.setName(name);
+
+                String info;
+
+                if (mock) {
+                    Path path = Paths.get(mockDir, name);
+                    byte[] bytes = Files.readAllBytes(path);
+                    info = new String(bytes);
+                    LOG.info(info);
+
+                } else {
+                    String cmd = "lxc-info -n " + name + " -H";
+                    info = new ShellCommand(cmd).execute();
+                   // LOG.info(info);
+                }
+
+                Matcher m = STATE.matcher(info);
+                while (m.find()) {
+                    container.setState(State.valueOf(m.group(1)));
+                }
+
+                m = CPU_USAGE.matcher(info);
+                while (m.find()) {
+                    container.setCpuUsage(Long.parseLong(m.group(1)));
+                }
+
+                m = BLKIO_USAGE.matcher(info);
+                while (m.find()) {
+                    container.setBlkIO(Long.parseLong(m.group(1)));
+                }
+
+                m = MEMORY_USAGE.matcher(info);
+                while (m.find()) {
+                    container.setMemUsage(Long.parseLong(m.group(1)));
+                }
+
+                m = LINK.matcher(info);
+                while (m.find()) {
+                    container.setLink(m.group(1));
+                }
+
+                m = TX_BYTES.matcher(info);
+                while (m.find()) {
+                    container.setTxBytes(Long.parseLong(m.group(1)));
+                }
+
+                m = RX_BYTES.matcher(info);
+                while (m.find()) {
+                    container.setRxBytes(Long.parseLong(m.group(1)));
+                }
+
+                final String path = STATS + "/" + name;
+
+                if (zk.exists(path, null) == null) {
+                    ZKUtils.saveEphemeral(zk, container, path);
+                } else {
+                    ZKUtils.updateData(zk, container, path);
+                }
+
+            }
 
         } catch (Exception ex) {
             LOG.error(ex.toString(), ex);

@@ -20,10 +20,10 @@
     <xs:complexType name="container">
         <xs:sequence>
             <xs:element name="name"
-                        maxOccurs="1"
+                        minOccurs="1"
                         type="xs:string"/>
             <xs:element name="template"
-                        maxOccurs="1"
+                        minOccurs="1"
                         type="xs:string"/>
             <xs:element name="owner"
                         minOccurs="1"
@@ -31,12 +31,10 @@
                         type="user"/>
             <xs:element name="node"
                         minOccurs="0"
-                        maxOccurs="1"
                         type="node"/>
             <!-- IP Address of the container bridge interface -->
             <xs:element name="ipAddress"
                         minOccurs="0"
-                        maxOccurs="1"
                         type="xs:string"/>
             <!-- Ports on host forwarded to container ipAddress  -->
             <xs:element name="portForwardingPairs"
@@ -46,21 +44,37 @@
             <!-- SSH access info -->
             <xs:element name="ssh"
                         minOccurs="0"
-                        maxOccurs="1"
                         type="xs:string"/>
             <xs:element name="added"
-                        maxOccurs="1"
+                        minOccurs="0"
                         type="xs:dateTime"/>
             <xs:element name="lastStarted"
-                        maxOccurs="1"
+                        minOccurs="0"
                         type="xs:dateTime"/>
             <xs:element name="lastStopped"
-                        maxOccurs="1"
+                        minOccurs="0"
                         type="xs:dateTime"/>
             <xs:element name="state"
                         minOccurs="1"
                         maxOccurs="1"
                         type="state"/>
+            <xs:element name="cpuLimit"
+                        type="xs:int"/>
+            <xs:element name="memoryLimit"
+                        type="xs:long"/>
+            <xs:element name="cpuUsage"
+                        type="xs:long"/>
+            <xs:element name="memUsage"
+                        type="xs:long"/>
+            <xs:element name="blkIO"
+                        type="xs:long"/>
+            <xs:element name="link"
+                        minOccurs="0"
+                        type="xs:string"/>
+            <xs:element name="txBytes"
+                        type="xs:long"/>
+            <xs:element name="rxBytes"
+                        type="xs:long"/>
         </xs:sequence>  
     </xs:complexType>
     

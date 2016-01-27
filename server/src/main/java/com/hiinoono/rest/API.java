@@ -3,6 +3,7 @@ package com.hiinoono.rest;
 import com.hiinoono.managers.PlacementManager;
 import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.os.VirtualMachineDriver;
+import com.hiinoono.os.container.ContainerStatTimerTask;
 import com.hiinoono.os.container.NodeContainerWatcher;
 import com.hiinoono.os.mock.MockContainerDriver;
 import com.hiinoono.os.mock.MockVirtualMachineDriver;
@@ -23,6 +24,7 @@ import com.hiinoono.rest.user.UserResource;
 import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Random;
 import java.util.Timer;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
@@ -112,11 +114,16 @@ public class API extends ResourceConfig {
 
                     Timer timer = new Timer();
                     NodeStatTimerTask stats = new NodeStatTimerTask(zkc);
-                    timer.scheduleAtFixedRate(stats, 10, 30000);
+                    int startup = new Random().nextInt(30000);
+                    timer.scheduleAtFixedRate(stats, startup, 30000);
+
+                    ContainerStatTimerTask containerStats
+                            = new ContainerStatTimerTask(zkc);
+                    timer.schedule(containerStats, 500, 30000);
 
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
-                    
+
                 } catch (IOException |
                         KeeperException |
                         JAXBException |

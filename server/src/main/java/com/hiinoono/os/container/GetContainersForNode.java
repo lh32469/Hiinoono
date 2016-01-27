@@ -78,7 +78,7 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
             List<String> states = zk.getChildren(path, null);
 
             List<String> tree = ZKUtil.listSubTreeBFS(zk, path);
-          
+
             // Remove directory-only paths
             tree.remove(path);
             for (String state : states) {
@@ -87,11 +87,25 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
 
             for (String leaf : tree) {
                 LOG.debug(leaf);
-                containers.add(ZKUtils.loadContainer(zk, leaf));
+                Container container = ZKUtils.loadContainer(zk, leaf);
+                containers.add(container);
+
+                final String statFile = "/statistics/" +
+                        ContainerUtils.getZKname(container);
+                           
+                if (zk.exists(statFile, false) != null) {
+                    Container stats = ZKUtils.loadContainer(zk, statFile);
+                    container.setCpuUsage(stats.getCpuUsage());
+                    container.setMemUsage(stats.getMemUsage());
+                    container.setBlkIO(stats.getBlkIO());
+                    container.setLink(stats.getLink());
+                    container.setTxBytes(stats.getTxBytes());
+                    container.setRxBytes(stats.getRxBytes());
+                }
             }
 
             return containers;
-            
+
         } catch (KeeperException |
                 InterruptedException |
                 GeneralSecurityException |
