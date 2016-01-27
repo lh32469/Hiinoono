@@ -5,6 +5,7 @@ import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServl
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -69,8 +70,14 @@ public class Server {
         URI base = URI.create("http://0.0.0.0:" + port);
 
         final Path nodeIdFile = Paths.get("/etc/hiinoono/nodeId");
-        
+
         try {
+
+            Path parent = nodeIdFile.getParent();
+            if (!Files.exists(parent, LinkOption.NOFOLLOW_LINKS)) {
+                Files.createDirectory(parent);
+            }
+
             List<String> lines = Files.readAllLines(nodeIdFile);
             if (lines.size() == 1) {
                 System.setProperty(Utils.NODE_ID_PROPERTY, lines.get(0));
