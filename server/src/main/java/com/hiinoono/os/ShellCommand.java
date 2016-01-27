@@ -105,7 +105,9 @@ public class ShellCommand extends HystrixCommand<String> {
             BufferedReader br = new BufferedReader(isr);
             String line;
             while ((line = br.readLine()) != null) {
+                LOG.debug(line);
                 sb.append(line);
+                sb.append("\n");
             }
 
             int status = process.waitFor();
