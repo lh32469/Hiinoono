@@ -116,7 +116,7 @@ public class ShellCommand extends HystrixCommand<String> {
                         + " for command: " + command);
             }
 
-            return sb.toString();
+            return sb.toString().trim();
 
         } catch (Exception ex) {
             LOG.error(ex.toString());
