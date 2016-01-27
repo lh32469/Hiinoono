@@ -1,9 +1,7 @@
-package com.hiinoono.os.container;
+package com.hiinoono.timertask;
 
 import com.hiinoono.jaxb.Container;
-import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.State;
-import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.hiinoono.persistence.zk.ZooKeeperClient;
@@ -13,18 +11,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
 
@@ -99,21 +93,20 @@ public class ContainerStatTimerTask extends TimerTask {
             if (mock) {
                 String cmd = "ls " + mockDir;
                 lsContainers = new ShellCommand(cmd).execute();
-                LOG.info(lsContainers);
+                LOG.debug(lsContainers.trim());
             } else {
                 lsContainers = new ShellCommand("lxc-ls").execute();
             }
 
             lsContainers = lsContainers.trim();
-            
+
             for (String name : lsContainers.split("\\s+")) {
-                
-                if(name.trim().isEmpty()) {
-                    LOG.info("Empty [" + name + "]");
+
+                if (name.trim().isEmpty()) {
                     continue;
                 }
-                
-                LOG.info("[" + name + "]");
+
+                LOG.debug("[" + name + "]");
 
                 Container container = new Container();
                 container.setName(name);
@@ -124,12 +117,12 @@ public class ContainerStatTimerTask extends TimerTask {
                     Path path = Paths.get(mockDir, name);
                     byte[] bytes = Files.readAllBytes(path);
                     info = new String(bytes);
-                    LOG.info(info);
+                    // LOG.info(info);
 
                 } else {
                     String cmd = "lxc-info -n " + name + " -H";
                     info = new ShellCommand(cmd).execute();
-                   // LOG.info(info);
+                    // LOG.info(info);
                 }
 
                 Matcher m = STATE.matcher(info);
@@ -165,6 +158,18 @@ public class ContainerStatTimerTask extends TimerTask {
                 m = RX_BYTES.matcher(info);
                 while (m.find()) {
                     container.setRxBytes(Long.parseLong(m.group(1)));
+                }
+
+                if (!mock && container.getState().equals(State.RUNNING)) {
+                    // TODO: get: lxc-cgroup -n u5 cpuset.cpus
+                    // and: lxc-cgroup -n u5 memory.limit_in_bytes
+                    LinkedList<String> command = new LinkedList<>();
+                    command.add("lxc-cgroup");
+                    command.add("-n");
+                    command.add(name);
+                    command.add("memory.limit_in_bytes");
+                    String memLimit = new ShellCommand(command).execute();
+                    container.setMemoryLimit(Long.parseLong(memLimit));
                 }
 
                 final String path = STATS + "/" + name;
