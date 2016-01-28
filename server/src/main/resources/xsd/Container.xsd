@@ -24,7 +24,7 @@
                         type="xs:string"/>
             <xs:element name="template"
                         minOccurs="1"
-                        type="xs:string"/>
+                        type="template"/>
             <xs:element name="owner"
                         minOccurs="1"
                         maxOccurs="1"
@@ -60,8 +60,9 @@
                         type="state"/>
             <xs:element name="cpuLimit"
                         type="xs:int"/>
-            <xs:element name="memoryLimit"
-                        type="xs:long"/>
+            <xs:element name="memory"
+                        default="MEG_512"
+                        type="memOption"/>
             <xs:element name="cpuUsage"
                         type="xs:long"/>
             <xs:element name="memUsage"
@@ -83,7 +84,7 @@
     a Container for a @GET method that returns List<Container>
     -->
     <xs:element name="containers" type="containers" />
-    
+
     <xs:complexType name="containers">
         <xs:sequence>
             <xs:element name="container"
@@ -92,5 +93,22 @@
                         type="container"/>
         </xs:sequence>  
     </xs:complexType>
-   
+
+    <xs:simpleType name="memOption">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="MEG_512"/>
+            <xs:enumeration value="MEG_1024"/>
+            <xs:enumeration value="MEG_2048"/>
+            <xs:enumeration value="MEG_4096"/>
+            <xs:enumeration value="MEG_8192"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="template">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ubuntu"/>
+            <xs:enumeration value="oracle"/>
+        </xs:restriction>
+    </xs:simpleType>
+
 </xs:schema>
