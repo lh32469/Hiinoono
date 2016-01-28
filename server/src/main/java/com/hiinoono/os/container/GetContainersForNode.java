@@ -101,7 +101,7 @@ public class GetContainersForNode extends HystrixCommand<List<Container>> {
                     container.setLink(stats.getLink());
                     container.setTxBytes(stats.getTxBytes());
                     container.setRxBytes(stats.getRxBytes());
-                    container.setMemoryLimit(stats.getMemoryLimit());
+                    container.setMemory(stats.getMemory());
                     container.setCpuLimit(stats.getCpuLimit());
                 }
             }

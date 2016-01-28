@@ -64,7 +64,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
                 List<String> command = new LinkedList<>();
                 command.add("lxc-create");
                 command.add("-t");
-                command.add(container.getTemplate());
+                command.add(container.getTemplate().value());
                 command.add("-n");
                 command.add(containerName);
                 command.add("-B");

@@ -108,7 +108,11 @@ public class ContainerStarter extends HystrixCommand<Container> {
                 command.add("-n");
                 command.add(containerName);
                 command.add("memory.limit_in_bytes");
-                command.add("1024M");
+                
+                String mem = container.getMemory().toString();
+                mem = mem.replaceFirst("MEG_", "") + "M";
+                
+                command.add(mem);
                 new ShellCommand(command).queue();
 
                 command = new LinkedList<>();

@@ -169,7 +169,7 @@ public class ContainerStatTimerTask extends TimerTask {
                     command.add(name);
                     command.add("memory.limit_in_bytes");
                     String memLimit = new ShellCommand(command).execute();
-                    container.setMemoryLimit(Long.parseLong(memLimit));
+                    //container.set(Long.parseLong(memLimit));
                 }
 
                 final String path = STATS + "/" + name;
