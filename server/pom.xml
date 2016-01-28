@@ -129,7 +129,8 @@
                 </executions>
                 <configuration>
                     <accessExternalSchema>all</accessExternalSchema>   
-                    <extension>true</extension>  
+                    <extension>true</extension>
+                    <schemaDirectory>${project.basedir}/src/main/resources/xsd</schemaDirectory>
                 </configuration>
             </plugin>
             <plugin>
