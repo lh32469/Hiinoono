@@ -76,13 +76,13 @@ public class API extends ResourceConfig {
 
         MoxyJsonConfig config = new MoxyJsonConfig();
         config.setFormattedOutput(true);
-        config.setIncludeRoot(false);
+        config.setIncludeRoot(true);
         register(config.resolver());
 
         register(new Binder());
 
         property(MessageProperties.XML_FORMAT_OUTPUT, true);
-        property(MessageProperties.JAXB_PROCESS_XML_ROOT_ELEMENT, false);
+        property(MessageProperties.JAXB_PROCESS_XML_ROOT_ELEMENT, true);
     }
 
 
