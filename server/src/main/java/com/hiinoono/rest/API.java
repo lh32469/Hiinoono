@@ -1,12 +1,8 @@
 package com.hiinoono.rest;
 
 import com.hiinoono.managers.PlacementManager;
-import com.hiinoono.os.ContainerDriver;
-import com.hiinoono.os.VirtualMachineDriver;
 import com.hiinoono.timertask.ContainerStatTimerTask;
 import com.hiinoono.os.container.NodeContainerWatcher;
-import com.hiinoono.os.mock.MockContainerDriver;
-import com.hiinoono.os.mock.MockVirtualMachineDriver;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.persistence.UnitTestPersistenceManager;
 import com.hiinoono.persistence.zk.ZooKeeperPersistenceManager;
@@ -21,7 +17,6 @@ import com.hiinoono.timertask.NodeStatTimerTask;
 import com.hiinoono.rest.site.SiteResource;
 import com.hiinoono.rest.tenant.TenantResource;
 import com.hiinoono.rest.user.UserResource;
-import com.hiinoono.rest.vm.VirtualMachineResource;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Random;
@@ -55,7 +50,6 @@ public class API extends ResourceConfig {
         register(NodeResource.class);
         register(TenantResource.class);
         register(UserResource.class);
-        register(VirtualMachineResource.class);
         register(ContainerResource.class);
         //register(RolesAllowedDynamicFeature.class);
         register(HiinoonoRolesFeature.class);
@@ -93,13 +87,6 @@ public class API extends ResourceConfig {
 
             String zooKeepers = System.getProperty("zooKeepers");
 
-            // Only Mock availble currently
-            bind(MockVirtualMachineDriver.class)
-                    .to(VirtualMachineDriver.class);
-
-            bind(MockContainerDriver.class)
-                    .to(ContainerDriver.class);
-
             if (zooKeepers == null) {
                 bind(new UnitTestPersistenceManager())
                         .to(PersistenceManager.class);
@@ -110,7 +97,7 @@ public class API extends ResourceConfig {
                     bind(zkc);
 
                     new NodeContainerWatcher(zkc);
-                    bind(new PlacementManager(zkc));
+                    new PlacementManager(zkc);
 
                     Timer timer = new Timer();
                     NodeStatTimerTask stats = new NodeStatTimerTask(zkc);
