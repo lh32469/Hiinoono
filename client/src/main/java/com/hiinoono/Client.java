@@ -6,10 +6,10 @@ import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
 import com.hiinoono.jaxb.Tenant;
-import com.hiinoono.jaxb.User;
 import com.hiinoono.jaxb.Tenants;
+import com.hiinoono.jaxb.User;
 import com.hiinoono.rest.api.model.HClient;
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -25,21 +25,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
-import org.apache.commons.cli.AlreadySelectedException;
+import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
@@ -278,6 +277,8 @@ public class Client {
                 addContainer(cmd, c, svc);
             } else if (cmd.hasOption(GET_CONTAINER)) {
                 getContainer(cmd, c, svc);
+            } else if (cmd.hasOption(HiinoonoOptions.SAMPLE_CONTAINER)) {
+                getSampleContainer(cmd, c, svc);
             } else if (cmd.hasOption(HiinoonoOptions.STOP_CONTAINER)) {
                 stopContainer(cmd, c, svc);
             } else if (cmd.hasOption(HiinoonoOptions.START_CONTAINER)) {
@@ -588,10 +589,29 @@ public class Client {
         String name = cmd.getOptionValue(ADD_CONTAINER);
         HClient.Container container = HClient.container(c, URI.create(svc));
 
-        Container testC = new Container();
-        testC.setName(name);
-        testC.setTemplate("ubuntu");
-        container.create().postXmlAsContainer(testC);
+        final Class[] classes = {Container.class, Tenant.class, Node.class};
+        final Map<String, Object> properties = new HashMap<>();
+
+        if (!cmd.hasOption(HiinoonoOptions.XML)
+                && !name.toLowerCase().endsWith(".xml")) {
+            properties.put("eclipselink.media-type", "application/json");
+        }
+
+        try {
+
+            JAXBContext jc
+                    = JAXBContextFactory.createContext(classes, properties);
+            Unmarshaller um = jc.createUnmarshaller();
+            StreamSource source = new StreamSource(new File(name));
+
+            JAXBElement<Container> userElement
+                    = um.unmarshal(source, Container.class);
+            Container tc = userElement.getValue();
+
+            container.create().postXmlAsContainer(tc);
+        } catch (JAXBException ex) {
+            LOG.error(ex.toString(), ex);
+        }
 
     }
 
@@ -728,6 +748,21 @@ public class Client {
                         userName, list.get(0));
 
         get.getAs(String.class);
+    }
+
+
+    private static void getSampleContainer(CommandLine cmd,
+            javax.ws.rs.client.Client c,
+            String svc) {
+
+        HClient.Container cRequest = HClient.container(c, URI.create(svc));
+
+        if (cmd.hasOption(HiinoonoOptions.XML)) {
+            System.out.println(cRequest.sample().getAsXml(String.class));
+        } else {
+            System.out.println(cRequest.sample().getAsJson(String.class));
+        }
+
     }
 
 
