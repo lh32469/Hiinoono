@@ -10,6 +10,7 @@ import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
 import com.netflix.hystrix.HystrixCommandProperties;
 import java.security.GeneralSecurityException;
+import java.util.LinkedList;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -101,6 +102,22 @@ public class ContainerStarter extends HystrixCommand<Container> {
 
                 container.setSsh("ssh -p " + port + " ubuntu@" + externalIP);
                 container.getPortForwardingPairs().add(port + ":" + 22);
+
+                LinkedList<String> command = new LinkedList<>();
+                command.add("lxc-cgroup");
+                command.add("-n");
+                command.add(containerName);
+                command.add("memory.limit_in_bytes");
+                command.add("1024M");
+                new ShellCommand(command).queue();
+
+                command = new LinkedList<>();
+                command.add("lxc-cgroup");
+                command.add("-n");
+                command.add(containerName);
+                command.add("cpuset.cpus");
+                command.add("0");
+                new ShellCommand(command).queue();
 
             } else {
                 LOG.info("Simulate starting: " + containerName);
