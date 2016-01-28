@@ -48,6 +48,8 @@ public class HiinoonoOptions {
 
     static final String GET_CONTAINER = "getContainer";
 
+    static final String SAMPLE_CONTAINER = "sampleContainer";
+
     static final String API = "HIINOONO_SERVICE";
 
 
@@ -175,6 +177,12 @@ public class HiinoonoOptions {
 
         options.addOption("l", LIST, true,
                 "List containers ");
+
+        Option getSampleContainer = Option.builder()
+                .longOpt(SAMPLE_CONTAINER)
+                .desc("Get a sample Container.")
+                .build();
+        options.addOption(getSampleContainer);
 
         Option addContainer = Option.builder()
                 .hasArgs()
