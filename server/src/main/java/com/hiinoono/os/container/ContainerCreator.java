@@ -29,7 +29,7 @@ public class ContainerCreator extends HystrixCommand<Container> {
 
     private static final HystrixCommandProperties.Setter COMMAND_PROPS
             = HystrixCommandProperties.Setter()
-            .withExecutionTimeoutInMilliseconds(60000);
+            .withExecutionTimeoutInMilliseconds(300000);
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ContainerCreator.class);
