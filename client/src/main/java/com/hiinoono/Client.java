@@ -10,6 +10,8 @@ import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.rest.api.model.HClient;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -576,7 +580,13 @@ public class Client {
                 JAXBContext jc
                         = JAXBContextFactory.createContext(classes, properties);
                 Unmarshaller um = jc.createUnmarshaller();
-                StreamSource source = new StreamSource(new File(name));
+
+                FileInputStream fis = new FileInputStream(name);
+                // Make this two-step process so if file is not
+                // found the FileNotFoundException will be cleanly 
+                // thrown versus the uglier version as part of 
+                // a JAXBException.
+                StreamSource source = new StreamSource(fis);
 
                 JAXBElement<Container> userElement
                         = um.unmarshal(source, Container.class);
@@ -585,8 +595,8 @@ public class Client {
                 LOG.info("Adding: " + tc.getName());
 
                 container.create().postXmlAsContainer(tc);
-            } catch (JAXBException ex) {
-                LOG.error(ex.toString(), ex);
+            } catch (FileNotFoundException | JAXBException ex) {
+                LOG.error(ex.toString());
             }
 
         }
