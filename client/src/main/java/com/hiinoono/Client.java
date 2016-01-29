@@ -90,10 +90,6 @@ public class Client {
 
     private static final String DELETE_USER = "deleteUser";
 
-    private static final String SAMPLE_VM = "sampleVm";
-
-    private static final String ADD_VM = "addVm";
-
     private static final String ADD_CONTAINER = "addContainer";
 
     private static final String GET_CONTAINER = "getContainer";
@@ -271,8 +267,6 @@ public class Client {
                 addUser(cmd, c, svc);
             } else if (cmd.hasOption(DELETE_USER)) {
                 deleteUser(cmd, c, svc);
-            } else if (cmd.hasOption(SAMPLE_VM)) {
-                sampleVm(cmd, c, svc);
             } else if (cmd.hasOption(ADD_CONTAINER)) {
                 addContainer(cmd, c, svc);
             } else if (cmd.hasOption(GET_CONTAINER)) {
@@ -559,60 +553,43 @@ public class Client {
     }
 
 
-    private static void sampleVm(CommandLine cmd,
-            javax.ws.rs.client.Client c,
-            String svc) {
-
-        String format = cmd.getOptionValue(SAMPLE_VM);
-        HClient.Vm vm = HClient.vm(c, URI.create(svc));
-        Response response;
-
-        if ("xml".equalsIgnoreCase(format)) {
-            response = vm.sample().getAsXml(Response.class);
-        } else {
-            response = vm.sample().getAsJson(Response.class);
-        }
-
-        if (response.getStatus() >= 400) {
-            throw new WebApplicationException(response);
-        } else {
-            System.out.println("\n" + response.readEntity(String.class));
-        }
-
-    }
-
-
     private static void addContainer(CommandLine cmd,
             javax.ws.rs.client.Client c,
             String svc) {
 
-        String name = cmd.getOptionValue(ADD_CONTAINER);
-        HClient.Container container = HClient.container(c, URI.create(svc));
+        String[] files = cmd.getOptionValues(HiinoonoOptions.ADD_CONTAINER);
 
-        final Class[] classes = {Container.class, Tenant.class, Node.class};
-        final Map<String, Object> properties = new HashMap<>();
+        for (String name : files) {
 
-        if (!cmd.hasOption(HiinoonoOptions.XML)
-                && !name.toLowerCase().endsWith(".xml")) {
-            properties.put("eclipselink.media-type", "application/json");
+            HClient.Container container = HClient.container(c, URI.create(svc));
+
+            final Class[] classes = {Container.class, Tenant.class, Node.class};
+            final Map<String, Object> properties = new HashMap<>();
+
+            if (!cmd.hasOption(HiinoonoOptions.XML)
+                    && !name.toLowerCase().endsWith(".xml")) {
+                properties.put("eclipselink.media-type", "application/json");
+            }
+
+            try {
+
+                JAXBContext jc
+                        = JAXBContextFactory.createContext(classes, properties);
+                Unmarshaller um = jc.createUnmarshaller();
+                StreamSource source = new StreamSource(new File(name));
+
+                JAXBElement<Container> userElement
+                        = um.unmarshal(source, Container.class);
+                Container tc = userElement.getValue();
+
+                LOG.info("Adding: " + tc.getName());
+
+                container.create().postXmlAsContainer(tc);
+            } catch (JAXBException ex) {
+                LOG.error(ex.toString(), ex);
+            }
+
         }
-
-        try {
-
-            JAXBContext jc
-                    = JAXBContextFactory.createContext(classes, properties);
-            Unmarshaller um = jc.createUnmarshaller();
-            StreamSource source = new StreamSource(new File(name));
-
-            JAXBElement<Container> userElement
-                    = um.unmarshal(source, Container.class);
-            Container tc = userElement.getValue();
-
-            container.create().postXmlAsContainer(tc);
-        } catch (JAXBException ex) {
-            LOG.error(ex.toString(), ex);
-        }
-
     }
 
 
@@ -657,31 +634,37 @@ public class Client {
             javax.ws.rs.client.Client c,
             String svc) {
 
-        String name = cmd.getOptionValue(HiinoonoOptions.STOP_CONTAINER);
-        List<String> list = Arrays.asList(name.split("/"));
+        String[] containers
+                = cmd.getOptionValues(HiinoonoOptions.STOP_CONTAINER);
 
-        // Make list [cn-name/user/tenant] 
-        Collections.reverse(list);
+        for (String name : containers) {
+            LOG.info("Stopping: " + name);
 
-        String tenantName = user.getTenant();
-        String userName = user.getName();
+            List<String> list = Arrays.asList(name.split("/"));
 
-        if (list.size() > 1) {
-            // There is a user option
-            userName = list.get(1);
+            // Make list [cn-name/user/tenant] 
+            Collections.reverse(list);
+
+            String tenantName = user.getTenant();
+            String userName = user.getName();
+
+            if (list.size() > 1) {
+                // There is a user option
+                userName = list.get(1);
+            }
+
+            if (list.size() > 2) {
+                // There is a tenant option
+                tenantName = list.get(2);
+            }
+
+            HClient.Container container = HClient.container(c, URI.create(svc));
+            HClient.Container.StopTenantUserName get
+                    = container.stopTenantUserName(tenantName,
+                            userName, list.get(0));
+
+            get.getAs(String.class);
         }
-
-        if (list.size() > 2) {
-            // There is a tenant option
-            tenantName = list.get(2);
-        }
-
-        HClient.Container container = HClient.container(c, URI.create(svc));
-        HClient.Container.StopTenantUserName get
-                = container.stopTenantUserName(tenantName,
-                        userName, list.get(0));
-
-        get.getAs(String.class);
 
     }
 
@@ -690,31 +673,36 @@ public class Client {
             javax.ws.rs.client.Client c,
             String svc) {
 
-        String name = cmd.getOptionValue(HiinoonoOptions.DELETE_CONTAINER);
-        List<String> list = Arrays.asList(name.split("/"));
+        String[] containers
+                = cmd.getOptionValues(HiinoonoOptions.DELETE_CONTAINER);
 
-        // Make list [cn-name/user/tenant] 
-        Collections.reverse(list);
+        for (String name : containers) {
+            LOG.info("Deleting: " + name);
+            List<String> list = Arrays.asList(name.split("/"));
 
-        String tenantName = user.getTenant();
-        String userName = user.getName();
+            // Make list [cn-name/user/tenant] 
+            Collections.reverse(list);
 
-        if (list.size() > 1) {
-            // There is a user option
-            userName = list.get(1);
+            String tenantName = user.getTenant();
+            String userName = user.getName();
+
+            if (list.size() > 1) {
+                // There is a user option
+                userName = list.get(1);
+            }
+
+            if (list.size() > 2) {
+                // There is a tenant option
+                tenantName = list.get(2);
+            }
+
+            HClient.Container container = HClient.container(c, URI.create(svc));
+            HClient.Container.DeleteTenantUserName get
+                    = container.deleteTenantUserName(tenantName,
+                            userName, list.get(0));
+
+            get.getAs(String.class);
         }
-
-        if (list.size() > 2) {
-            // There is a tenant option
-            tenantName = list.get(2);
-        }
-
-        HClient.Container container = HClient.container(c, URI.create(svc));
-        HClient.Container.DeleteTenantUserName get
-                = container.deleteTenantUserName(tenantName,
-                        userName, list.get(0));
-
-        get.getAs(String.class);
 
     }
 
@@ -723,31 +711,37 @@ public class Client {
             javax.ws.rs.client.Client c,
             String svc) {
 
-        String name = cmd.getOptionValue(HiinoonoOptions.START_CONTAINER);
-        List<String> list = Arrays.asList(name.split("/"));
+        String[] containers
+                = cmd.getOptionValues(HiinoonoOptions.START_CONTAINER);
 
-        // Make list [cn-name/user/tenant] 
-        Collections.reverse(list);
+        for (String name : containers) {
+            LOG.info("Starting: " + name);
+            List<String> list = Arrays.asList(name.split("/"));
 
-        String tenantName = user.getTenant();
-        String userName = user.getName();
+            // Make list [cn-name/user/tenant] 
+            Collections.reverse(list);
 
-        if (list.size() > 1) {
-            // There is a user option
-            userName = list.get(1);
+            String tenantName = user.getTenant();
+            String userName = user.getName();
+
+            if (list.size() > 1) {
+                // There is a user option
+                userName = list.get(1);
+            }
+
+            if (list.size() > 2) {
+                // There is a tenant option
+                tenantName = list.get(2);
+            }
+
+            HClient.Container container = HClient.container(c, URI.create(svc));
+            HClient.Container.StartTenantUserName get
+                    = container.startTenantUserName(tenantName,
+                            userName, list.get(0));
+
+            get.getAs(String.class);
         }
 
-        if (list.size() > 2) {
-            // There is a tenant option
-            tenantName = list.get(2);
-        }
-
-        HClient.Container container = HClient.container(c, URI.create(svc));
-        HClient.Container.StartTenantUserName get
-                = container.startTenantUserName(tenantName,
-                        userName, list.get(0));
-
-        get.getAs(String.class);
     }
 
 
