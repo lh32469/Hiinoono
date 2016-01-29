@@ -4,6 +4,7 @@ import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
+import com.hiinoono.persistence.zk.ZooKeeperConstants;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
 import com.netflix.hystrix.HystrixCommandProperties;
@@ -74,6 +75,13 @@ public class ContainerDeleter extends HystrixCommand<Container> {
                     ).execute();
 
                     LOG.info(iptables);
+                }
+
+                final String statsPath = ZooKeeperConstants.STATS
+                        + "/" + containerName;
+
+                if (zk.exists(statsPath, false) != null) {
+                    zk.delete(statsPath, -1);
                 }
 
             } else {
