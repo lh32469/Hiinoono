@@ -169,13 +169,17 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
             KeeperException, InterruptedException, GeneralSecurityException {
 
         LOG.info(ContainerUtils.getZKname(container));
-        CONTAINER_LOG.info(ContainerUtils.getZKname(container));
         final ZooKeeper zk = zooKeeperClient.getZookeeper();
         List<Node> nodes = ZKUtils.getNodes(zk).collect(Collectors.toList());
 
-        // Sort the Nodes based on the best fit for this Container
+        // Sort the Nodes based on the best fit for this Container.
+        // All things being equal, select at random.
+        Collections.shuffle(nodes);
+       final Node target = nodes.get(0);
         Collections.sort(nodes, new NodeComparator(container));
-        container.setNode(nodes.get(0));
+        CONTAINER_LOG.info(ContainerUtils.getZKname(container)
+                + " => " + target.getHostname());
+        container.setNode(target);
 
         /*
          * Container is stored in ZK in the /containers/{nodeId}/transition for
