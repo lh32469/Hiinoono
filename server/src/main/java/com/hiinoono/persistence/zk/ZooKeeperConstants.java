@@ -29,6 +29,11 @@ public interface ZooKeeperConstants {
     String STATS = "/statistics";
 
     /**
+     * Node path for logs related to creating containers and such.
+     */
+    String LOGS = "/logs";
+
+    /**
      * ACL to create nodes with.
      *
      * For private: Ids.CREATOR_ALL_ACL
