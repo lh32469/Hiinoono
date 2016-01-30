@@ -109,6 +109,22 @@ public class NodeStatTimerTask extends TimerTask {
                 LOG.info("No memory stats, " + MEM_INFO + " not found");
             }
 
+            if (System.getProperty("MOCK") == null) {
+
+                // Get the available space in the hiinoono volume group
+                String cmnd = "vgs -o vg_free --units M --noheadings hiinoono";
+                ShellCommand command = new ShellCommand(cmnd);
+                String vgFree = command.execute();
+                // Strip off trailing 'M'
+                vgFree = vgFree.replaceAll("M", "");
+                node.setVgFree(Float.parseFloat(vgFree));
+
+                // TODO: get what managers are running on this Node.
+                // TODO: get containers assigned to this Node and 
+                // Update  node.setMemAllocated(value) with the
+                // total allocate to each container.
+            }
+
             node.setUpdated(Utils.now());
 
             if (zk.exists(nodeStatusPath, false) == null) {
