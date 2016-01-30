@@ -48,6 +48,8 @@ public class HiinoonoOptions {
 
     static final String GET_CONTAINER = "getContainer";
 
+    static final String GET_INSTALL_LOG = "getInstallLog";
+
     static final String SAMPLE_CONTAINER = "sampleContainer";
 
     static final String API = "HIINOONO_SERVICE";
@@ -129,6 +131,14 @@ public class HiinoonoOptions {
                 .desc("Get info on Container.")
                 .build();
         options.addOption(getContainer);
+
+        Option getInstallLog = Option.builder()
+                .hasArgs()
+                .argName("tenant/user/container")
+                .longOpt(GET_INSTALL_LOG)
+                .desc("Get install log for Container.")
+                .build();
+        options.addOption(getInstallLog);
 
     }
 
