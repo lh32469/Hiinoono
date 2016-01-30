@@ -165,6 +165,22 @@ public class ZKUtils implements ZooKeeperConstants {
 
 
     /**
+     * Store the install log for the container.
+     */
+    public static void saveInstallLog(ZooKeeper zk, Container c, String log)
+            throws JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
+
+        final String logPath = ZooKeeperConstants.LOGS
+                + "/" + ContainerUtils.getZKname(c)
+                + "-install.log";
+
+        zk.create(logPath, Utils.encrypt2(log.getBytes()),
+                ACL, CreateMode.PERSISTENT);
+    }
+
+
+    /**
      * Store the Container in the State path associated with the current State
      * of the Container for the Node it is currently assigned to. Example:
      * /containers/{nodeId}/STOPPED
