@@ -153,24 +153,6 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
             JAXBException, GeneralSecurityException {
 
         final ZooKeeper zk = zooKeeperClient.getZookeeper();
-        List<String> containerNames
-                = zk.getChildren(TO_BE_PLACED_NODEPATH, this);
-
-        for (String containerName : containerNames) {
-            final String cPath = TO_BE_PLACED_NODEPATH + "/" + containerName;
-            Container container = ZKUtils.loadContainer(zk, cPath);
-            zk.delete(cPath, -1);
-            place(container);
-        }
-
-    }
-
-
-    void place(Container container) throws JAXBException,
-            KeeperException, InterruptedException, GeneralSecurityException {
-
-        LOG.info(ContainerUtils.getZKname(container));
-        final ZooKeeper zk = zooKeeperClient.getZookeeper();
 
         // Get currently available Nodes and their statistics.
         List<Node> nodes
@@ -189,14 +171,35 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
             }
         }
 
+        List<String> containerNames
+                = zk.getChildren(TO_BE_PLACED_NODEPATH, this);
+
+        for (String containerName : containerNames) {
+            final String cPath = TO_BE_PLACED_NODEPATH + "/" + containerName;
+            Container container = ZKUtils.loadContainer(zk, cPath);
+            zk.delete(cPath, -1);
+            place(container, nodes);
+        }
+
+    }
+
+
+    void place(Container container, List<Node> nodes) throws JAXBException,
+            KeeperException, InterruptedException, GeneralSecurityException {
+
+        LOG.info(ContainerUtils.getZKname(container));
+        final ZooKeeper zk = zooKeeperClient.getZookeeper();
+
         // Sort the Nodes based on the best fit for this Container.
         // All things being equal, select at random.
         Collections.shuffle(nodes);
         Collections.sort(nodes, new NodeComparator(container));
-        final Node target = nodes.get(0);
+        final Node assignedNode = nodes.get(0);
         CONTAINER_LOG.info(ContainerUtils.getZKname(container)
-                + " => " + target.getHostname());
-        container.setNode(target);
+                + " => " + assignedNode.getHostname());
+        container.setNode(assignedNode);
+        // Update in-memory Node with new assignment for next placement.
+        assignedNode.getContainers().add(container);
 
         /*
          * Container is stored in ZK in the /containers/{nodeId}/transition for
@@ -205,9 +208,6 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
          */
         ZKUtils.saveToTransitioning(zk, container);
 
-        // Give it some time for container creation information to 
-        // be registered and propogate through cluster.
-        Thread.sleep(TimeUnit.SECONDS.toMillis(5));
     }
 
 
