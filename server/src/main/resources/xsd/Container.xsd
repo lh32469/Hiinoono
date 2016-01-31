@@ -63,6 +63,9 @@
             <xs:element name="memory"
                         default="MEG_512"
                         type="memOption"/>
+            <xs:element name="disk"
+                        default="GIG_10"
+                        type="diskOption"/>
             <xs:element name="cpuUsage"
                         type="xs:long"/>
             <xs:element name="memUsage"
@@ -101,6 +104,16 @@
             <xs:enumeration value="MEG_2048"/>
             <xs:enumeration value="MEG_4096"/>
             <xs:enumeration value="MEG_8192"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="diskOption">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="GIG_5"/>
+            <xs:enumeration value="GIG_10"/>
+            <xs:enumeration value="GIG_20"/>
+            <xs:enumeration value="GIG_30"/>
+            <xs:enumeration value="GIG_40"/>
         </xs:restriction>
     </xs:simpleType>
 
