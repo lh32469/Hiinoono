@@ -6,6 +6,7 @@ import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.os.container.ContainerUtils;
+import com.hiinoono.os.container.GetContainersForNode;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.security.GeneralSecurityException;
@@ -14,7 +15,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
+import javax.ws.rs.NotAcceptableException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -243,6 +247,37 @@ public class ZKUtils implements ZooKeeperConstants {
             LOG.error(ex.toString(), ex);
             return Collections.EMPTY_LIST.stream();
         }
+    }
+
+
+    public static Stream<Container> getContainers(ZooKeeper zk) {
+        
+        List<Container> containers = new LinkedList<>();
+
+        try {
+            // Get list of Nodes holding Containers.
+            List<String> nodes
+                    = zk.getChildren(ContainerConstants.CONTAINERS, null);
+
+            List<Future<List<Container>>> futures = new LinkedList<>();
+
+            for (String node : nodes) {
+                String path = ContainerConstants.CONTAINERS + "/" + node;
+                futures.add(new GetContainersForNode(zk, path).queue());
+            }
+
+            for (Future<List<Container>> future : futures) {
+                containers.addAll(future.get());
+            }
+
+        } catch (KeeperException |
+                InterruptedException |
+                ExecutionException ex) {
+            LOG.error(ex.toString(), ex);
+            throw new NotAcceptableException(ex.toString());
+        }
+
+        return containers.stream();
     }
 
 

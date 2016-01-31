@@ -7,17 +7,13 @@ import com.hiinoono.jaxb.State;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.managers.PlacementManager;
-import com.hiinoono.os.container.ContainerConstants;
 import com.hiinoono.os.container.ContainerUtils;
-import com.hiinoono.os.container.GetContainersForNode;
 import com.hiinoono.persistence.PersistenceManager;
-import static com.hiinoono.persistence.zk.ZooKeeperConstants.NODES;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -42,9 +38,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
-import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +47,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Lyle T Harris
  */
-public class ZooKeeperPersistenceManager implements PersistenceManager {
+public class ZooKeeperPersistenceManager implements
+        PersistenceManager, ZooKeeperConstants {
 
     private static JAXBContext jc;
 
@@ -64,15 +59,6 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
      * been attempted. Need a better way of doing this at some point..
      */
     private static boolean initialized = false;
-
-    /**
-     * ACL to create nodes with.
-     *
-     * For private: Ids.CREATOR_ALL_ACL
-     *
-     * For development: Ids.OPEN_ACL_UNSAFE
-     */
-    private final ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ZooKeeperPersistenceManager.class);
@@ -135,7 +121,12 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
             if (zk.exists(TENANTS, null) == null) {
                 zk.create(TENANTS, "Initialized".getBytes(),
-                        acl, CreateMode.PERSISTENT);
+                        ACL, CreateMode.PERSISTENT);
+            }
+
+            if (zk.exists(LOGS, null) == null) {
+                zk.create(LOGS, "Initialized".getBytes(),
+                        ACL, CreateMode.PERSISTENT);
             }
 
             try {
@@ -265,29 +256,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public Stream<Node> getNodes() {
-
-        try {
-
-            ZooKeeper zk = zooKeeperClient.getZookeeper();
-            List<Node> nodes = new LinkedList<>();
-            List<String> names
-                    = zk.getChildren(NODES, false);
-            LOG.info(names.toString());
-
-            for (String name : names) {
-                nodes.add(ZKUtils.loadNode(zk,
-                        NODES + "/" + name));
-            }
-
-            return nodes.stream();
-
-        } catch (KeeperException |
-                JAXBException |
-                GeneralSecurityException |
-                InterruptedException ex) {
-            LOG.error(ex.toString(), ex);
-            return Collections.EMPTY_LIST.stream();
-        }
+        return ZKUtils.getNodes(zooKeeperClient.getZookeeper());
     }
 
 
@@ -302,7 +271,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
             marshaller.marshal(t, mem);
 
             zk.create(tenantPath, Utils.encrypt(mem.toByteArray()),
-                    acl, CreateMode.PERSISTENT);
+                    ACL, CreateMode.PERSISTENT);
             LOG.info("Adding Tenant: " + t.getName() + "\n" + mem);
         } catch (NodeExistsException ex) {
             throw new NotAcceptableException("Tenant " + t.getName()
@@ -411,33 +380,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
 
     @Override
     public Stream<Container> getContainers() {
-        List<Container> containers = new LinkedList<>();
-
-        ZooKeeper zk = zooKeeperClient.getZookeeper();
-
-        try {
-            List<String> nodes
-                    = zk.getChildren(ContainerConstants.CONTAINERS, null);
-
-            List<Future<List<Container>>> futures = new LinkedList<>();
-
-            for (String node : nodes) {
-                String path = ContainerConstants.CONTAINERS + "/" + node;
-                futures.add(new GetContainersForNode(zk, path).queue());
-            }
-
-            for (Future<List<Container>> future : futures) {
-                containers.addAll(future.get());
-            }
-
-        } catch (KeeperException |
-                InterruptedException |
-                ExecutionException ex) {
-            LOG.error(ex.toString(), ex);
-            throw new NotAcceptableException(ex.toString());
-        }
-
-        return containers.stream();
+       return ZKUtils.getContainers(zooKeeperClient.getZookeeper());
     }
 
 
@@ -476,7 +419,7 @@ public class ZooKeeperPersistenceManager implements PersistenceManager {
                 JAXBException | GeneralSecurityException ex) {
             LOG.error(ex.toString(), ex);
         }
-        
+
     }
 
 
