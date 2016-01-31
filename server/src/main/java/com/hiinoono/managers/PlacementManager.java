@@ -11,6 +11,7 @@ import com.hiinoono.rest.node.NodeComparator;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.xml.bind.JAXBException;
@@ -170,13 +171,29 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
 
         LOG.info(ContainerUtils.getZKname(container));
         final ZooKeeper zk = zooKeeperClient.getZookeeper();
-        List<Node> nodes = ZKUtils.getNodes(zk).collect(Collectors.toList());
+
+        // Get currently available Nodes and their statistics.
+        List<Node> nodes
+                = ZKUtils.getNodes(zk).collect(Collectors.toList());
+
+        // Get all currently assigned Containers.  (Possibly this info
+        // could be included in the getNodes method in future..)
+        List<Container> containers
+                = ZKUtils.getContainers(zk).collect(Collectors.toList());
+
+        for (Container c : containers) {
+            for (Node node : nodes) {
+                if (c.getNode().getId().equals(node.getId())) {
+                    node.getContainers().add(c);
+                }
+            }
+        }
 
         // Sort the Nodes based on the best fit for this Container.
         // All things being equal, select at random.
         Collections.shuffle(nodes);
-       final Node target = nodes.get(0);
         Collections.sort(nodes, new NodeComparator(container));
+        final Node target = nodes.get(0);
         CONTAINER_LOG.info(ContainerUtils.getZKname(container)
                 + " => " + target.getHostname());
         container.setNode(target);
@@ -187,6 +204,10 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
          * for that nodes picks it up and creates it.
          */
         ZKUtils.saveToTransitioning(zk, container);
+
+        // Give it some time for container creation information to 
+        // be registered and propogate through cluster.
+        Thread.sleep(TimeUnit.SECONDS.toMillis(5));
     }
 
 
