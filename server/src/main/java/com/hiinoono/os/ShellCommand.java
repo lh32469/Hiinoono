@@ -26,6 +26,11 @@ public class ShellCommand extends HystrixCommand<String> {
     private final String fallbackResponse;
 
     /**
+     * For capturing command stdout.
+     */
+    private final StringBuilder stdout = new StringBuilder();
+
+    /**
      * Default fallbackResponse if not provided in constructor.
      */
     public static final String ERROR = "ERROR";
@@ -35,7 +40,7 @@ public class ShellCommand extends HystrixCommand<String> {
 
     private static final HystrixCommandProperties.Setter COMMAND_PROPS
             = HystrixCommandProperties.Setter()
-            .withExecutionTimeoutInMilliseconds(60000);  // Should be a param
+            .withExecutionTimeoutInMilliseconds(300000);  // Should be a param
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ShellCommand.class);
@@ -94,7 +99,6 @@ public class ShellCommand extends HystrixCommand<String> {
     protected String run() throws Exception {
 
         LOG.debug(command.toString());
-        StringBuilder sb = new StringBuilder();
 
         try {
 
@@ -106,20 +110,24 @@ public class ShellCommand extends HystrixCommand<String> {
             String line;
             while ((line = br.readLine()) != null) {
                 LOG.trace(line);
-                sb.append(line);
-                sb.append("\n");
+                stdout.append(line);
+                stdout.append("\n");
             }
 
             int status = process.waitFor();
             if (status != 0) {
-                LOG.warn("Exit status = " + status
-                        + " for command: " + command);
+                String msg = "Exit status = " + status
+                        + " for command: " + command;
+                LOG.warn(msg);
+                // So Hystrix will register failure.
+                throw new IllegalStateException(msg);
             }
 
-            return sb.toString().trim();
+            return stdout.toString().trim();
 
         } catch (Exception ex) {
-            LOG.error(ex.toString());
+            LOG.error(stdout.toString().trim());
+            LOG.debug(ex.toString(), ex);
             throw ex;
         }
 
@@ -133,6 +141,16 @@ public class ShellCommand extends HystrixCommand<String> {
         } else {
             return fallbackResponse;
         }
+    }
+
+
+    /**
+     * Get the stdout from the command execution. Used when there is an error.
+     *
+     * @return
+     */
+    public String getStdout() {
+        return stdout.toString();
     }
 
 
