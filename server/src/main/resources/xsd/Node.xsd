@@ -34,9 +34,6 @@
                         type="xs:long"/>
             <xs:element name="memAvailable"
                         type="xs:long"/>
-            <!-- Memory allocated to containers on a Node -->
-            <xs:element name="memAllocated"
-                        type="xs:long"/>
             <xs:element name="swapTotal"
                         type="xs:long"/>
             <xs:element name="swapFree"
@@ -44,6 +41,10 @@
             <!-- Amount of space available in Volume Group hiinoono -->
             <xs:element name="vgFree"
                         type="xs:float"/>
+            <xs:element name="containers"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="container"/>
             <xs:element name="updated"
                         minOccurs="0"
                         maxOccurs="1"
