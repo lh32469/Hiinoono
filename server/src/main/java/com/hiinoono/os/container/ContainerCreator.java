@@ -6,7 +6,10 @@ import com.hiinoono.os.ShellCommand;
 import com.hiinoono.persistence.zk.ZKUtils;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandProperties;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.bind.JAXBException;
@@ -58,6 +61,9 @@ public class ContainerCreator extends HystrixCommand<Container> {
             // Add to /containers/{nodeId}/CREATING
             ZKUtils.saveToState(zk, container);
 
+            final Charset set = StandardCharsets.UTF_8;
+            final Base64.Encoder encoder = Base64.getEncoder();
+
             if (System.getProperty("MOCK") == null) {
 
                 // TODO: Create user and then container under that user.
@@ -71,11 +77,31 @@ public class ContainerCreator extends HystrixCommand<Container> {
                 command.add("lvm");
                 command.add("--vgname");
                 command.add("hiinoono");
+                command.add("--fssize");
+                command.add("5G");
                 ShellCommand shell = new ShellCommand(command);
-                LOG.info(shell.execute());
 
-           } else {
-                LOG.info("Simulate creating: " + containerName);
+                String result = shell.execute();
+
+                if (result.equals(ShellCommand.ERROR)) {
+                    LOG.error(command.toString());
+                    String stdout = shell.getStdout();
+                    String encoded
+                            = encoder.encodeToString(stdout.getBytes(set));
+                    ZKUtils.saveInstallLog(zk, container, encoded);
+                    // So Hystrix will register failure.
+                    throw new IllegalStateException(shell.getStdout());
+                }
+
+                String encoded = encoder.encodeToString(result.getBytes(set));
+                ZKUtils.saveInstallLog(zk, container, encoded);
+
+            } else {
+
+                String log = "Simulate creating: " + containerName;
+                String encoded = encoder.encodeToString(log.getBytes(set));
+                ZKUtils.saveInstallLog(zk, container, encoded);
+                LOG.info(log);
                 Thread.sleep(5000);
             }
 
