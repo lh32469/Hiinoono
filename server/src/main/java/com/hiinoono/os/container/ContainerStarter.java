@@ -78,14 +78,22 @@ public class ContainerStarter extends HystrixCommand<Container> {
 
                 /// Setup iptables for NAT
                 // Get port
-                String sequence = zk.create("/port",
+                if (zk.exists(ZooKeeperConstants.PORTS, null) == null) {
+                    LOG.info("Creating: " + ZooKeeperConstants.PORTS);
+                    zk.create(ZooKeeperConstants.PORTS,
+                            "Initialized".getBytes(),
+                            ZooKeeperConstants.ACL, CreateMode.PERSISTENT);
+                }
+
+                String sequence = zk.create(ZooKeeperConstants.PORTS + "/port",
                         containerName.getBytes(),
                         ZooKeeperConstants.ACL,
                         CreateMode.PERSISTENT_SEQUENTIAL);
 
                 LOG.info(sequence);
 
-                int port = Integer.parseInt(sequence.replace("/port", ""));
+                int port = Integer.parseInt(sequence.replace(
+                        ZooKeeperConstants.PORTS + "/port", ""));
                 port += 12000; // Change this to offset property.
 
                 String iptables = new ShellCommand("iptables -t nat "
@@ -108,10 +116,10 @@ public class ContainerStarter extends HystrixCommand<Container> {
                 command.add("-n");
                 command.add(containerName);
                 command.add("memory.limit_in_bytes");
-                
+
                 String mem = container.getMemory().toString();
                 mem = mem.replaceFirst("MEG_", "") + "M";
-                
+
                 command.add(mem);
                 new ShellCommand(command).queue();
 

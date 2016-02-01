@@ -34,6 +34,11 @@ public interface ZooKeeperConstants {
     String LOGS = "/logs";
 
     /**
+     * Node path for ports related to creating port forwarding for containers.
+     */
+    String PORTS = "/ports";
+
+    /**
      * ACL to create nodes with.
      *
      * For private: Ids.CREATOR_ALL_ACL
