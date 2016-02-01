@@ -11,7 +11,6 @@ import com.hiinoono.rest.node.NodeComparator;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.xml.bind.JAXBException;
@@ -149,10 +148,19 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
      * @throws KeeperException
      * @throws InterruptedException
      */
-    void checkPath() throws KeeperException, InterruptedException,
+    synchronized void checkPath() throws
+            KeeperException, InterruptedException,
             JAXBException, GeneralSecurityException {
 
         final ZooKeeper zk = zooKeeperClient.getZookeeper();
+
+        List<String> containerNames
+                = zk.getChildren(TO_BE_PLACED_NODEPATH, this);
+
+        if (containerNames.isEmpty()) {
+            LOG.info("Nothing to place.");
+            return;
+        }
 
         // Get currently available Nodes and their statistics.
         List<Node> nodes
@@ -165,14 +173,11 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
 
         for (Container c : containers) {
             for (Node node : nodes) {
-                if (c.getNode().getId().equals(node.getId())) {
+                if (c.getNodeId().equals(node.getId())) {
                     node.getContainers().add(c);
                 }
             }
         }
-
-        List<String> containerNames
-                = zk.getChildren(TO_BE_PLACED_NODEPATH, this);
 
         for (String containerName : containerNames) {
             final String cPath = TO_BE_PLACED_NODEPATH + "/" + containerName;
@@ -184,8 +189,9 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
     }
 
 
-    void place(Container container, List<Node> nodes) throws JAXBException,
-            KeeperException, InterruptedException, GeneralSecurityException {
+    synchronized void place(Container container, List<Node> nodes) throws
+            JAXBException, KeeperException,
+            InterruptedException, GeneralSecurityException {
 
         LOG.info(ContainerUtils.getZKname(container));
         final ZooKeeper zk = zooKeeperClient.getZookeeper();
@@ -197,9 +203,7 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
         final Node assignedNode = nodes.get(0);
         CONTAINER_LOG.info(ContainerUtils.getZKname(container)
                 + " => " + assignedNode.getHostname());
-        container.setNode(assignedNode);
-        // Update in-memory Node with new assignment for next placement.
-        assignedNode.getContainers().add(container);
+        container.setNodeId(assignedNode.getId());
 
         /*
          * Container is stored in ZK in the /containers/{nodeId}/transition for
@@ -207,6 +211,9 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
          * for that nodes picks it up and creates it.
          */
         ZKUtils.saveToTransitioning(zk, container);
+
+        // Update in-memory Node with new assignment for next placement.
+        assignedNode.getContainers().add(container);
 
     }
 
