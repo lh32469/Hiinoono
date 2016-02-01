@@ -29,9 +29,9 @@
                         minOccurs="1"
                         maxOccurs="1"
                         type="user"/>
-            <xs:element name="node"
+            <xs:element name="nodeId"
                         minOccurs="0"
-                        type="node"/>
+                        type="xs:string"/>
             <!-- IP Address of the container bridge interface -->
             <xs:element name="ipAddress"
                         minOccurs="0"
