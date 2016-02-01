@@ -239,7 +239,7 @@ public class ZooKeeperPersistenceManager implements
 
     @Override
     public Optional<Tenant> getTenantByName(String name) {
-        LOG.info(name);
+        LOG.debug(name);
         ZooKeeper zk = zooKeeperClient.getZookeeper();
         GetTenantByName get = new GetTenantByName(zk, name, key);
         return get.execute();
@@ -247,7 +247,7 @@ public class ZooKeeperPersistenceManager implements
 
 
     public Future<Optional<Tenant>> getTenantByNameQueued(String name) {
-        LOG.info(name);
+        LOG.debug(name);
         ZooKeeper zk = zooKeeperClient.getZookeeper();
         GetTenantByName get = new GetTenantByName(zk, name, key);
         return get.queue();
@@ -308,7 +308,7 @@ public class ZooKeeperPersistenceManager implements
             if (user.isPresent()) {
                 // "Password" in this context is hash 
                 // of tenant, username and password
-                LOG.info("Found: " + user.get().getPassword());
+                LOG.debug("Found: " + user.get().getPassword());
                 return user.get().getPassword();
             }
         }
