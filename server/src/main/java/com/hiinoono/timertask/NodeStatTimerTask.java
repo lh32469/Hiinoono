@@ -66,11 +66,11 @@ public class NodeStatTimerTask extends TimerTask {
         nodeStatusPath = NODES + "/" + Utils.getNodeId();
         LOG.info("Started: " + nodeStatusPath);
 
-        if (zk.exists(nodeStatusPath, false) == null) {
-            ZKUtils.saveEphemeral(zk, node, nodeStatusPath);
-        } else {
-            ZKUtils.updateData(zk, node, nodeStatusPath);
+        if (zk.exists(nodeStatusPath, false) != null) {
+            zk.delete(nodeStatusPath, -1);
         }
+
+        ZKUtils.saveEphemeral(zk, node, nodeStatusPath);
 
     }
 
