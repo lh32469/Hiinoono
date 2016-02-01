@@ -50,10 +50,10 @@ public class ContainerStarter extends HystrixCommand<Container> {
 
     @Override
     protected Container run() throws Exception {
-        LOG.info("Starting: " + container.getName());
 
         // lxc name (cn-name.user.tenant)
         final String containerName = ContainerUtils.getZKname(container);
+        LOG.info("Starting: " + containerName);
 
         try {
 
