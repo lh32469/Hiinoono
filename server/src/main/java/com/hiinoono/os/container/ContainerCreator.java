@@ -78,7 +78,9 @@ public class ContainerCreator extends HystrixCommand<Container> {
                 command.add("--vgname");
                 command.add("hiinoono");
                 command.add("--fssize");
-                command.add("5G");
+                String disk = container.getDisk().toString();
+                disk = disk.replace("GIG_", "") + "G";
+                command.add(disk);
                 ShellCommand shell = new ShellCommand(command);
 
                 String result = shell.execute();
