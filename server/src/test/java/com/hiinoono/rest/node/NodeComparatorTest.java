@@ -31,6 +31,8 @@ public class NodeComparatorTest {
 
     private List<Node> nodes;
 
+    private NodeComparator nc;
+
 
     public NodeComparatorTest() {
     }
@@ -48,6 +50,8 @@ public class NodeComparatorTest {
 
     @Before
     public void setUp() {
+
+        nc = new NodeComparator(new Container());
 
         n1 = new Node();
         n1.setHostname("node1");
@@ -86,7 +90,7 @@ public class NodeComparatorTest {
         n2.setMemAvailable(16005000l);
         n3.setMemAvailable(16000000l);
 
-        Collections.sort(nodes, new NodeComparator(new Container()));
+        Collections.sort(nodes, nc);
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -109,7 +113,7 @@ public class NodeComparatorTest {
         n2.setMemAvailable(24000000l);
         n3.setMemAvailable(8000000l);
 
-        Collections.sort(nodes, new NodeComparator(new Container()));
+        Collections.sort(nodes, nc);
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -131,7 +135,7 @@ public class NodeComparatorTest {
         n2.setVgFree(128000.0f);
         n3.setVgFree(128050.0f);
 
-        Collections.sort(nodes, new NodeComparator(new Container()));
+        Collections.sort(nodes, nc);
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -158,7 +162,7 @@ public class NodeComparatorTest {
         c.setMemory(MemOption.MEG_8192);
         n2.getContainers().add(c);
 
-        Collections.sort(nodes, new NodeComparator(new Container()));
+        Collections.sort(nodes, nc);
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -181,7 +185,7 @@ public class NodeComparatorTest {
         n2.setVgFree(128000.0f);
         n3.setVgFree(26000.0f);
 
-        Collections.sort(nodes, new NodeComparator(new Container()));
+        Collections.sort(nodes, nc);
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -201,8 +205,7 @@ public class NodeComparatorTest {
         System.out.println("testMemOptions");
 
         for (MemOption option : MemOption.values()) {
-            long value = NodeComparator.MEM_FORMAT
-                    .parse(option.toString()).longValue();
+            long value = nc.convert(option);
             System.out.println(option + " = " + value);
             assertTrue(value > 0);
         }
@@ -217,8 +220,7 @@ public class NodeComparatorTest {
         System.out.println("testDiskOptions");
 
         for (DiskOption option : DiskOption.values()) {
-            long value = NodeComparator.DISK_FORMAT
-                    .parse(option.toString()).longValue();
+            long value = nc.convert(option);
             System.out.println(option + " = " + value);
             assertTrue(value > 0);
         }
