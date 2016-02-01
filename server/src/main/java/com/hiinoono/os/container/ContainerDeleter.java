@@ -74,7 +74,7 @@ public class ContainerDeleter extends HystrixCommand<Container> {
                             + ip + ":" + array[1]
                     ).execute();
 
-                    LOG.info(iptables);
+                    LOG.debug("iptables output: " + iptables);
                 }
 
                 final String statsPath = ZooKeeperConstants.STATS
@@ -83,6 +83,9 @@ public class ContainerDeleter extends HystrixCommand<Container> {
                 if (zk.exists(statsPath, false) != null) {
                     zk.delete(statsPath, -1);
                 }
+
+                // Cleanup install log.
+                ZKUtils.deleteInstallLog(zk, container);
 
             } else {
                 LOG.info("Simulate deleting: " + containerName);
