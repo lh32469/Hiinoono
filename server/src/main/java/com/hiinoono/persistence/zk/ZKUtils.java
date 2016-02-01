@@ -179,6 +179,10 @@ public class ZKUtils implements ZooKeeperConstants {
                 + "/" + ContainerUtils.getZKname(c)
                 + "-install.log";
 
+        if (zk.exists(logPath, false) != null) {
+            zk.delete(logPath, -1);
+        }
+
         zk.create(logPath, Utils.encrypt2(log.getBytes()),
                 ACL, CreateMode.PERSISTENT);
     }
@@ -251,7 +255,7 @@ public class ZKUtils implements ZooKeeperConstants {
 
 
     public static Stream<Container> getContainers(ZooKeeper zk) {
-        
+
         List<Container> containers = new LinkedList<>();
 
         try {
