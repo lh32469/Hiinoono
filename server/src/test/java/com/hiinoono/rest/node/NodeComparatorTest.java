@@ -27,6 +27,11 @@ import static org.junit.Assert.*;
  */
 public class NodeComparatorTest {
 
+    private Node n1, n2, n3;
+
+    private List<Node> nodes;
+
+
     public NodeComparatorTest() {
     }
 
@@ -43,6 +48,25 @@ public class NodeComparatorTest {
 
     @Before
     public void setUp() {
+
+        n1 = new Node();
+        n1.setHostname("node1");
+
+        n2 = new Node();
+        n2.setHostname("node2");
+
+        n3 = new Node();
+        n3.setHostname("node3");
+
+        nodes = new LinkedList<>();
+        nodes.add(n1);
+        nodes.add(n2);
+        nodes.add(n3);
+
+        for (Node node : nodes) {
+            node.setMemTotal(16328372);      // kB
+            node.setMemAvailable(14922516);  // kB
+        }
     }
 
 
@@ -58,25 +82,11 @@ public class NodeComparatorTest {
     public void smallMemoryDifference() {
         System.out.println("smallMemoryDifference");
 
-        Node n1 = new Node();
-        n1.setHostname("node1");
         n1.setMemAvailable(16000000l);
-
-        Node n2 = new Node();
-        n2.setHostname("node2");
         n2.setMemAvailable(16005000l);
-
-        Node n3 = new Node();
-        n3.setHostname("node3");
         n3.setMemAvailable(16000000l);
 
-        List<Node> nodes = new LinkedList<>();
-        nodes.add(n1);
-        nodes.add(n2);
-        nodes.add(n3);
-
         Collections.sort(nodes, new NodeComparator(new Container()));
-        System.out.println("1st: " + nodes.get(0).getHostname());
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -95,25 +105,11 @@ public class NodeComparatorTest {
     public void largeMemoryDifference() {
         System.out.println("largeMemoryDifference");
 
-        Node n1 = new Node();
-        n1.setHostname("node1");
         n1.setMemAvailable(16000000l);
-
-        Node n2 = new Node();
-        n2.setHostname("node2");
         n2.setMemAvailable(24000000l);
-
-        Node n3 = new Node();
-        n3.setHostname("node3");
         n3.setMemAvailable(8000000l);
 
-        List<Node> nodes = new LinkedList<>();
-        nodes.add(n1);
-        nodes.add(n2);
-        nodes.add(n3);
-
         Collections.sort(nodes, new NodeComparator(new Container()));
-        System.out.println("1st: " + nodes.get(0).getHostname());
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -131,28 +127,11 @@ public class NodeComparatorTest {
     public void smallVolumeGroupDifference() {
         System.out.println("smallVolumeGroupDifference");
 
-        Node n1 = new Node();
-        n1.setHostname("node1");
-        n1.setMemAvailable(128000l);
         n1.setVgFree(127950.0f);
-
-        Node n2 = new Node();
-        n2.setHostname("node2");
-        n2.setMemAvailable(128000l);
         n2.setVgFree(128000.0f);
-
-        Node n3 = new Node();
-        n3.setHostname("node3");
-        n3.setMemAvailable(128000l);
         n3.setVgFree(128050.0f);
 
-        List<Node> nodes = new LinkedList<>();
-        nodes.add(n1);
-        nodes.add(n2);
-        nodes.add(n3);
-
         Collections.sort(nodes, new NodeComparator(new Container()));
-        System.out.println("1st: " + nodes.get(0).getHostname());
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -165,31 +144,44 @@ public class NodeComparatorTest {
 
 
     /**
+     *
+     */
+    @Test
+    public void containerAssign1() {
+        System.out.println("containerAssign1");
+
+        Container c = new Container();
+        c.setMemory(MemOption.MEG_1024);
+        n1.getContainers().add(c);
+
+        c = new Container();
+        c.setMemory(MemOption.MEG_8192);
+        n2.getContainers().add(c);
+
+        Collections.sort(nodes, new NodeComparator(new Container()));
+
+        for (Node node : nodes) {
+            System.out.println(node.getHostname());
+        }
+
+        assertEquals(n3, nodes.get(0));
+        assertEquals(n1, nodes.get(1));
+        assertEquals(n2, nodes.get(2));
+    }
+
+
+    /**
      * Test that large differences in VG size does affect sorting.
      */
     @Test
     public void largeVolumeGroupDifference() {
         System.out.println("largeVolumeGroupDifference");
 
-        Node n1 = new Node();
-        n1.setHostname("node1");
         n1.setVgFree(125000.0f);
-
-        Node n2 = new Node();
-        n2.setHostname("node2");
         n2.setVgFree(128000.0f);
-
-        Node n3 = new Node();
-        n3.setHostname("node3");
         n3.setVgFree(26000.0f);
 
-        List<Node> nodes = new LinkedList<>();
-        nodes.add(n1);
-        nodes.add(n2);
-        nodes.add(n3);
-
         Collections.sort(nodes, new NodeComparator(new Container()));
-        System.out.println("1st: " + nodes.get(0).getHostname());
 
         for (Node node : nodes) {
             System.out.println(node.getHostname());
@@ -212,6 +204,7 @@ public class NodeComparatorTest {
             long value = NodeComparator.MEM_FORMAT
                     .parse(option.toString()).longValue();
             System.out.println(option + " = " + value);
+            assertTrue(value > 0);
         }
     }
 
@@ -227,6 +220,7 @@ public class NodeComparatorTest {
             long value = NodeComparator.DISK_FORMAT
                     .parse(option.toString()).longValue();
             System.out.println(option + " = " + value);
+            assertTrue(value > 0);
         }
 
     }
