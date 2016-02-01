@@ -6,7 +6,10 @@
 package com.hiinoono.rest.node;
 
 import com.hiinoono.jaxb.Container;
+import com.hiinoono.jaxb.DiskOption;
+import com.hiinoono.jaxb.MemOption;
 import com.hiinoono.jaxb.Node;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -195,6 +198,37 @@ public class NodeComparatorTest {
         assertEquals(n2, nodes.get(0));
         assertEquals(n1, nodes.get(1));
         assertEquals(n3, nodes.get(2));
+    }
+
+
+    /**
+     * Test that all MemOptions are parsable.
+     */
+    @Test
+    public void testMemOptions() throws ParseException {
+        System.out.println("testMemOptions");
+
+        for (MemOption option : MemOption.values()) {
+            long value = NodeComparator.MEM_FORMAT
+                    .parse(option.toString()).longValue();
+            System.out.println(option + " = " + value);
+        }
+    }
+
+
+    /**
+     * Test that all DiskOptions are parsable.
+     */
+    @Test
+    public void testDiskOptions() throws ParseException {
+        System.out.println("testDiskOptions");
+
+        for (DiskOption option : DiskOption.values()) {
+            long value = NodeComparator.DISK_FORMAT
+                    .parse(option.toString()).longValue();
+            System.out.println(option + " = " + value);
+        }
+
     }
 
 
