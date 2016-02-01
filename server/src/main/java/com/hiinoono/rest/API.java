@@ -96,17 +96,17 @@ public class API extends ResourceConfig {
                             = new ZooKeeperClient(zooKeepers, "Welcome1");
                     bind(zkc);
 
-                    new NodeContainerWatcher(zkc);
-                    new PlacementManager(zkc);
-
                     Timer timer = new Timer();
                     NodeStatTimerTask stats = new NodeStatTimerTask(zkc);
-                    int startup = new Random().nextInt(30000);
-                    timer.scheduleAtFixedRate(stats, startup, 30000);
+                    // Need to run at least once before PlacementManager
+                    timer.scheduleAtFixedRate(stats, 0, 30000);
 
                     ContainerStatTimerTask containerStats
                             = new ContainerStatTimerTask(zkc);
-                    timer.schedule(containerStats, 500, 30000);
+                    timer.schedule(containerStats, 0, 30000);
+
+                    new NodeContainerWatcher(zkc);
+                    new PlacementManager(zkc);
 
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
