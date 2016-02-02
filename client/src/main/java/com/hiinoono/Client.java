@@ -390,7 +390,7 @@ public class Client {
             HClient.Container cont = HClient.container(c, URI.create(svc));
             Containers containers = cont.list().getAsContainers();
             final String hinoonoAdminFormat
-                    = "%-15s%-15s%-15s%-15s%-10s%-15s%-25s\n";
+                    = "%-12s%-12s%-12s%-12s%-10s%-15s%-25s\n";
             final String tenantAdminformat
                     = "%-15s%-15s%-15s%-10s%-25s\n";
             final String userFormat
@@ -436,7 +436,7 @@ public class Client {
                             container.getOwner().getName(),
                             container.getTemplate(),
                             container.getState(),
-                            container.getNode().getHostname(),
+                            container.getNodeId().split("-")[0] + "..",
                             dtf.format(zdt));
                 } else if (user.getName().equals("admin")) {
                     System.out.printf(tenantAdminformat,
