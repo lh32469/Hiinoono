@@ -40,6 +40,8 @@ public class HiinoonoOptions {
 
     static final String ADD_CONTAINER = "addContainer";
 
+    static final String INCLUDE_KEY = "key";
+
     static final String START_CONTAINER = "startContainer";
 
     static final String STOP_CONTAINER = "stopContainer";
@@ -201,6 +203,14 @@ public class HiinoonoOptions {
                 .desc("Add a new Container.")
                 .build();
         options.addOption(addContainer);
+
+        Option includeSshKey = Option.builder()
+                .hasArgs()
+                .argName("fileName")
+                .longOpt(INCLUDE_KEY)
+                .desc("Include SSH Key.")
+                .build();
+        options.addOption(includeSshKey);
 
         Option getContainer = Option.builder()
                 .hasArgs()
