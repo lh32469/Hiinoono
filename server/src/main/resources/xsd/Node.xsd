@@ -41,7 +41,7 @@
             <!-- Amount of space available in Volume Group hiinoono -->
             <xs:element name="vgFree"
                         type="xs:float"/>
-            <xs:element name="containers"
+            <xs:element name="container"
                         minOccurs="0"
                         maxOccurs="unbounded"
                         type="container"/>
