@@ -251,12 +251,21 @@ public class ZKUtils implements ZooKeeperConstants {
         try {
 
             List<Node> nodes = new LinkedList<>();
-            List<String> names = zk.getChildren(NODES, false);
-            LOG.info(names.toString());
+            List<String> nodeIds = zk.getChildren(NODES, false);
+            LOG.info(nodeIds.toString());
 
-            for (String name : names) {
-                nodes.add(ZKUtils.loadNode(zk,
-                        NODES + "/" + name));
+            for (String nodeId : nodeIds) {
+
+                // Submit request for Containers for this node.
+                String path = ContainerConstants.CONTAINERS + "/" + nodeId;
+                Future<List<Container>> future = 
+                        new GetContainersForNode(zk, path).queue();
+                // Load the Node info
+                Node node = ZKUtils.loadNode(zk, NODES + "/" + nodeId);
+                // Add all the containers for this Node
+                node.getContainers().addAll(future.get());
+                nodes.add(node);
+
             }
 
             return nodes.stream();
@@ -264,6 +273,7 @@ public class ZKUtils implements ZooKeeperConstants {
         } catch (KeeperException |
                 JAXBException |
                 GeneralSecurityException |
+                ExecutionException |
                 InterruptedException ex) {
             LOG.error(ex.toString(), ex);
             return Collections.EMPTY_LIST.stream();
