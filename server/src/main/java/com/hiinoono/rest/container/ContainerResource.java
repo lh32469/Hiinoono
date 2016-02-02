@@ -2,29 +2,48 @@ package com.hiinoono.rest.container;
 
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Containers;
+import com.hiinoono.jaxb.DiskOption;
+import com.hiinoono.jaxb.MemOption;
 import com.hiinoono.jaxb.State;
+import com.hiinoono.jaxb.Template;
+import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
-import com.hiinoono.os.ContainerDriver;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
 import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.xml.XMLConstants;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.validation.SchemaFactory;
+import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 
 /**
@@ -39,6 +58,8 @@ public class ContainerResource {
     private final static String[] CURRENCY
             = {MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML};
 
+    private static final Class[] JAXB_CLASSES = {Container.class};
+
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ContainerResource.class);
 
@@ -52,12 +73,41 @@ public class ContainerResource {
     private SecurityContext sc;
 
 
+    @GET
+    @Path("sample")
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    public Container getSample() {
+
+        Container c = new Container();
+        c.setName("cn-01");
+        c.setTemplate(Template.UBUNTU);
+        c.setMemory(MemOption.MEG_512);
+        c.setDisk(DiskOption.GIG_5);
+        c.setCpuLimit(2);
+        
+        NumberFormat nf =  new DecimalFormat("'GIG_'#");
+        
+        System.out.println("Value: " + DiskOption.GIG_5);
+        try {
+            System.out.println("Parsed: "
+                    + nf.parse(DiskOption.GIG_5.toString()));
+            System.out.println("Parsed: "
+                    + nf.parse(DiskOption.GIG_40.toString()));
+        } catch (ParseException ex) {
+           LOG.error(ex.toString());
+        }
+
+
+        return c;
+    }
+
+
     @POST
     @Path("create")
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-//    @HiinoonoRolesAllowed(roles = {Roles.USER},
-//            message = "You are not permitted to create containers.  " +
-//                    "Only Users can create containers.")
+    @HiinoonoRolesAllowed(roles = {Roles.USER},
+            message = "You are not permitted to create containers.  "
+            + "Only Users can create containers.")
     public Container create(Container c) throws IOException {
         LOG.info(c.getName() + " => " + c.getTemplate());
 
@@ -68,11 +118,40 @@ public class ContainerResource {
         final String tenantName = principalName.split("/")[0];
         final String userName = principalName.split("/")[1];
 
-        User user = new User();
-        user.setTenant(tenantName);
-        user.setName(userName);
+        Tenant tenant = pm.getTenantByName(tenantName).get();
 
-        c.setOwner(user);
+        User owner = tenant.getUsers().stream().filter((user)
+                -> (user.getName().equals(userName))).findFirst().get();
+
+        if (owner.getEmail() == null) {
+            // TODO: Make sure this is set when user added.
+            owner.setEmail("foo@foo.com");
+        }
+
+        owner.setPassword("******");
+        c.setOwner(owner);
+        c.setState(State.CREATE_REQUESTED);
+
+        try {
+
+            String language = XMLConstants.W3C_XML_SCHEMA_NS_URI;
+            Map props = Collections.EMPTY_MAP;
+            SchemaFactory sf = SchemaFactory.newInstance(language);
+            URL schemaURL
+                    = ClassLoader.getSystemResource("xsd/Container.xsd");
+
+            JAXBContext jc
+                    = JAXBContextFactory.createContext(JAXB_CLASSES, props);
+
+            Marshaller m = jc.createMarshaller();
+            m.setSchema(sf.newSchema(schemaURL));
+
+            // Validate...
+            m.marshal(c, new DefaultHandler());
+
+        } catch (SAXException | JAXBException ex) {
+            throw new NotAcceptableException(ex.toString());
+        }
 
         pm.addContainer(c);
         return c;
@@ -269,39 +348,39 @@ public class ContainerResource {
         final String tenantName = principalName.split("/")[0];
         final String userName = principalName.split("/")[1];
 
-        List<Container> list;
+        Optional<Container> optional;
 
         if (sc.isUserInRole(Roles.H_ADMIN)) {
-            list = pm.getContainers().filter(
+            optional = pm.getContainers().filter(
                     n -> n.getOwner().getTenant().equals(tenantParam)
                     && n.getOwner().getName().equals(userParam)
                     && n.getName().equals(containerName)
-            ).collect(Collectors.toList());
+            ).findFirst();
 
         } else if (sc.isUserInRole(Roles.T_ADMIN)) {
             // Ignore Tenant PathParam, can only view in own tenancy
-            list = pm.getContainers().filter(
+            optional = pm.getContainers().filter(
                     n -> n.getOwner().getTenant().equals(tenantName)
                     && n.getOwner().getName().equals(userParam)
                     && n.getName().equals(containerName)
-            ).collect(Collectors.toList());
+            ).findFirst();
 
         } else {
             // Ignore Tenant and User PathParams, can only view own containers.
-            list = pm.getContainers().filter(
+            optional = pm.getContainers().filter(
                     n -> n.getOwner().getTenant().equals(tenantName)
                     && n.getOwner().getName().equals(userName)
                     && n.getName().equals(containerName)
-            ).collect(Collectors.toList());
+            ).findFirst();
 
         }
 
-        if (list.isEmpty()) {
+        if (!optional.isPresent()) {
             throw new NotAcceptableException("Container " + containerName
                     + " doesn't exist.");
         }
 
-        return list.get(0);
+        return optional.get();
     }
 
 
