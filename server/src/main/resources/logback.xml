@@ -109,6 +109,31 @@
         </filter>
     </appender> 
     
+    <appender name="ShellCommand" 
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/tmp/H-ShellCommand.log</file>
+       
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/var/tmp/H-ShellCommand.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy
+            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} [%thread] %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender> 
+    
+    
     <appender name="Root" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/var/tmp/H-Root.log</file>
@@ -146,6 +171,10 @@
 
     <logger name="com.hiinoono.os.container" level="DEBUG">
         <appender-ref ref="Containers" />
+    </logger>
+    
+    <logger name="com.hiinoono.os.ShellCommand" level="DEBUG">
+        <appender-ref ref="ShellCommand" />
     </logger>
 
     <root level="INFO">
