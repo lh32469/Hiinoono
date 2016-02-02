@@ -44,6 +44,8 @@ public class HiinoonoOptions {
 
     static final String START_CONTAINER = "startContainer";
 
+    static final String CLONE_CONTAINER = "cloneContainer";
+
     static final String STOP_CONTAINER = "stopContainer";
 
     static final String DELETE_CONTAINER = "deleteContainer";
@@ -237,6 +239,14 @@ public class HiinoonoOptions {
                 .desc("Start a Container.")
                 .build();
         group.addOption(startContainer);
+
+        Option cloneContainer = Option.builder()
+                .hasArgs()
+                .argName("orig new")
+                .longOpt(CLONE_CONTAINER)
+                .desc("Clone a Container.")
+                .build();
+        group.addOption(cloneContainer);
 
         Option deleteContainer = Option.builder()
                 .hasArgs()
