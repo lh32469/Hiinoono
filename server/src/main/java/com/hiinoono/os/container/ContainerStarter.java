@@ -96,12 +96,21 @@ public class ContainerStarter extends HystrixCommand<Container> {
                         ZooKeeperConstants.PORTS + "/port", ""));
                 port += 12000; // Change this to offset property.
 
-                String iptables = new ShellCommand("iptables -t nat "
+                String stdout = new ShellCommand("iptables -t nat "
                         + "-A PREROUTING -p tcp -i eth0 --dport "
                         + port + " -j DNAT --to-destination " + ip + ":22"
                 ).execute();
 
-                LOG.info(iptables);
+                if (!stdout.isEmpty()) {
+                    LOG.error(stdout);
+                }
+
+                stdout = new ShellCommand("iptables-save > "
+                        + "/etc/iptables/rules.v4").execute();
+
+                if (!stdout.isEmpty()) {
+                    LOG.error(stdout);
+                }
 
                 // Get external IP
                 String addresses = new ShellCommand("hostname -I").execute();
