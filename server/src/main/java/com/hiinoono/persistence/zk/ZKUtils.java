@@ -160,7 +160,7 @@ public class ZKUtils implements ZooKeeperConstants {
             InterruptedException, GeneralSecurityException {
 
         final String transition = ContainerConstants.CONTAINERS
-                + "/" + container.getNode().getId()
+                + "/" + container.getNodeId()
                 + ContainerConstants.TRANSITIONING
                 + "/" + ContainerUtils.getZKname(container);
 
@@ -175,6 +175,25 @@ public class ZKUtils implements ZooKeeperConstants {
             throws JAXBException, KeeperException,
             InterruptedException, GeneralSecurityException {
 
+        // Cleanup prior runs if any.
+        deleteInstallLog(zk, c);
+
+        final String logPath = ZooKeeperConstants.LOGS
+                + "/" + ContainerUtils.getZKname(c)
+                + "-install.log";
+
+        zk.create(logPath, Utils.encrypt2(log.getBytes()),
+                ACL, CreateMode.PERSISTENT);
+    }
+
+
+    /**
+     * Delete the install log for the container. Used for cleanup when deleting
+     * container.
+     */
+    public static void deleteInstallLog(ZooKeeper zk, Container c)
+            throws KeeperException, InterruptedException {
+
         final String logPath = ZooKeeperConstants.LOGS
                 + "/" + ContainerUtils.getZKname(c)
                 + "-install.log";
@@ -183,8 +202,6 @@ public class ZKUtils implements ZooKeeperConstants {
             zk.delete(logPath, -1);
         }
 
-        zk.create(logPath, Utils.encrypt2(log.getBytes()),
-                ACL, CreateMode.PERSISTENT);
     }
 
 
@@ -198,7 +215,7 @@ public class ZKUtils implements ZooKeeperConstants {
             InterruptedException, GeneralSecurityException {
 
         final String transition = ContainerConstants.CONTAINERS
-                + "/" + container.getNode().getId()
+                + "/" + container.getNodeId()
                 + "/" + container.getState()
                 + "/" + ContainerUtils.getZKname(container);
 
@@ -216,7 +233,7 @@ public class ZKUtils implements ZooKeeperConstants {
             InterruptedException, GeneralSecurityException {
 
         final String path = ContainerConstants.CONTAINERS
-                + "/" + container.getNode().getId()
+                + "/" + container.getNodeId()
                 + "/" + container.getState()
                 + "/" + ContainerUtils.getZKname(container);
 
