@@ -14,11 +14,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.Format;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -61,7 +64,7 @@ public class Client {
      * Format for dates presented to the user.
      */
     private static final Format DTF
-            = DateTimeFormatter.RFC_1123_DATE_TIME.toFormat();
+            = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private static final String LIST = "list";
 
@@ -109,7 +112,7 @@ public class Client {
             = LoggerFactory.getLogger(Client.class);
 
 
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException, ParseException, java.text.ParseException {
 
         String _user = System.getenv(USER);
         if (_user == null) {
@@ -322,7 +325,7 @@ public class Client {
     private static void list(
             CommandLine cmd,
             javax.ws.rs.client.Client c,
-            String svc) {
+            String svc) throws java.text.ParseException {
 
         String type = cmd.getOptionValue(LIST);
         if (type.equalsIgnoreCase(TENANTS)) {
@@ -346,22 +349,48 @@ public class Client {
         } else if (type.equalsIgnoreCase(NODES)) {
             HClient.Node t = HClient.node(c, URI.create(svc));
             Nodes nodes = t.getAsNodes();
-            final String format = "%-20s%-40s%-25s\n";
+            final String format = "%-17s%-10s%4s%11s%8s%9s  %-25s\n";
             System.out.println("");
             System.out.printf(format,
                     "Hostname",
                     "NodeId",
+                    "Cs",
+                    "M-Subs",
+                    "M-Tot",
+                    "Disk",
                     "Joined");
 
+            final NumberFormat memFormat = new DecimalFormat("'MEG_'#");
+            final NumberFormat diskFormat = new DecimalFormat("'GIG_'#");
+
             for (Node node : nodes.getNode()) {
-                XMLGregorianCalendar joined = node.getJoined();
-                ZonedDateTime zdt
-                        = joined.toGregorianCalendar().toZonedDateTime();
+                Date joined = node.getJoined().toGregorianCalendar().getTime();
+
+                long memUsed = node.getContainer().stream().mapToLong(cn
+                        -> cn.getMemUsage() / 1024000).sum();
+
+                int memAllocated = node.getContainer().stream().mapToInt(cn -> {
+                    try {
+                        String option = cn.getMemory().toString();
+                        return memFormat.parse(option).intValue();
+                    } catch (java.text.ParseException ex) {
+                        return 0;
+                    }
+                }).sum();
+
+                int diskUsed
+                        = (int) (node.getVgTotal() - node.getVgFree()) / 1024;
+
+                int diskTotal = (int) (node.getVgTotal() / 1024);
 
                 System.out.printf(format,
                         node.getHostname(),
-                        node.getId(),
-                        DTF.format(zdt));
+                        node.getId().split("-")[0] + "..",
+                        node.getContainer().size(),
+                        memUsed + "/" + memAllocated,
+                        node.getMemTotal() / 1024,
+                        diskUsed + "/" + diskTotal,
+                        DTF.format(joined));
             }
 
             System.out.println("");
@@ -390,12 +419,14 @@ public class Client {
             HClient.Container cont = HClient.container(c, URI.create(svc));
             Containers containers = cont.list().getAsContainers();
             final String hinoonoAdminFormat
-                    = "%-12s%-12s%-12s%-12s%-10s%-15s%-25s\n";
+                    = "%-12s%-11s%-11s%-12s%-10s%-12s%-25s\n";
             final String tenantAdminformat
                     = "%-15s%-15s%-15s%-10s%-25s\n";
             final String userFormat
-                    = "%-15s%-15s%-10s%-25s\n";
-            Format dtf = DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat();
+                    = "%-11s%-11s%-9s%10s%6s  %-22s\n";
+
+            final NumberFormat memFormat = new DecimalFormat("'MEG_'#");
+            final NumberFormat diskFormat = new DecimalFormat("'GIG_'#");
 
             System.out.println("");
 
@@ -420,37 +451,47 @@ public class Client {
                         "Name",
                         "Template",
                         "State",
+                        "Memory",
+                        "Disk",
                         "Added");
             }
 
             for (Container container : containers.getContainer()) {
 
-                XMLGregorianCalendar added = container.getAdded();
-                ZonedDateTime zdt
-                        = added.toGregorianCalendar().toZonedDateTime();
+                Date added
+                        = container.getAdded().toGregorianCalendar().getTime();
 
                 if (user.getTenant().equals("hiinoono")) {
                     System.out.printf(hinoonoAdminFormat,
                             container.getName(),
                             container.getOwner().getTenant(),
                             container.getOwner().getName(),
-                            container.getTemplate(),
-                            container.getState(),
+                            capitalize(container.getTemplate().toString()),
+                            capitalize(container.getState().toString()),
                             container.getNodeId().split("-")[0] + "..",
-                            dtf.format(zdt));
+                            DTF.format(added));
                 } else if (user.getName().equals("admin")) {
                     System.out.printf(tenantAdminformat,
                             container.getName(),
                             container.getOwner().getName(),
-                            container.getTemplate(),
-                            container.getState(),
-                            dtf.format(zdt));
+                            capitalize(container.getTemplate().toString()),
+                            capitalize(container.getState().toString()),
+                            DTF.format(added));
                 } else {
+                    long memUsed = container.getMemUsage() / 1024 / 1024;
+                    String tmp = container.getMemory().toString();
+                    long memAlloc = memFormat.parse(tmp).longValue();
+
+                    tmp = container.getDisk().toString();
+                    int diskUsed = diskFormat.parse(tmp).intValue();
+
                     System.out.printf(userFormat,
                             container.getName(),
-                            container.getTemplate(),
-                            container.getState(),
-                            dtf.format(zdt));
+                            capitalize(container.getTemplate().toString()),
+                            capitalize(container.getState().toString()),
+                            memUsed + "/" + memAlloc,
+                            diskUsed + "G",
+                            DTF.format(added));
                 }
 
             }
@@ -785,6 +826,19 @@ public class Client {
         } catch (JAXBException ex) {
             LOG.error(ex.toString());
         }
+    }
+
+
+    /**
+     * Returns the word with only the 1st letter in uppercase.
+     *
+     * @param word
+     * @return
+     */
+    static String capitalize(String word) {
+        word = word.toLowerCase();
+        return word.substring(0, 1).toUpperCase() + word.substring(1);
+
     }
 
 
