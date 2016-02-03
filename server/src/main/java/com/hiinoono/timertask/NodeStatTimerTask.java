@@ -111,18 +111,25 @@ public class NodeStatTimerTask extends TimerTask {
 
             if (System.getProperty("MOCK") == null) {
 
-                // Get the available space in the hiinoono volume group
-                String cmnd = "vgs -o vg_free --units M --noheadings hiinoono";
-                ShellCommand command = new ShellCommand(cmnd);
-                String vgFree = command.execute();
+                // Get the total and available space in the 
+                // hiinoono volume group
+                final String free
+                        = "vgs -o vg_free --units M --noheadings hiinoono";
+                final String size
+                        = "vgs -o vg_size --units M --noheadings hiinoono";
+
+                ShellCommand freeCommand = new ShellCommand(free);
+                String vgFree = freeCommand.execute();
                 // Strip off trailing 'M'
                 vgFree = vgFree.replaceAll("M", "");
                 node.setVgFree(Float.parseFloat(vgFree));
 
+                ShellCommand sizeCommand = new ShellCommand(size);
+                String vgSize = sizeCommand.execute();
+                vgSize = vgSize.replaceAll("M", "");
+                node.setVgTotal(Float.parseFloat(vgSize));
+
                 // TODO: get what managers are running on this Node.
-                // TODO: get containers assigned to this Node and 
-                // Update  node.setMemAllocated(value) with the
-                // total allocate to each container.
             }
 
             node.setUpdated(Utils.now());
