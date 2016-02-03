@@ -166,19 +166,6 @@ public class PlacementManager implements Watcher, ZooKeeperConstants {
         List<Node> nodes
                 = ZKUtils.getNodes(zk).collect(Collectors.toList());
 
-        // Get all currently assigned Containers.  (Possibly this info
-        // could be included in the getNodes method in future..)
-        List<Container> containers
-                = ZKUtils.getContainers(zk).collect(Collectors.toList());
-
-        for (Container c : containers) {
-            for (Node node : nodes) {
-                if (c.getNodeId().equals(node.getId())) {
-                    node.getContainers().add(c);
-                }
-            }
-        }
-
         for (String containerName : containerNames) {
             final String cPath = TO_BE_PLACED_NODEPATH + "/" + containerName;
             Container container = ZKUtils.loadContainer(zk, cPath);
