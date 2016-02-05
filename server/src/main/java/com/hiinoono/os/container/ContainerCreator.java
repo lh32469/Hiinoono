@@ -8,6 +8,9 @@ import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandProperties;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.LinkedList;
@@ -94,6 +97,31 @@ public class ContainerCreator extends HystrixCommand<Container> {
                     // So Hystrix will register failure.
                     throw new IllegalStateException(shell.getStdout());
                 }
+
+                // lxc.cgroup.cpuset.cpus = 0,1
+                // lxc.cgroup.memory.limit_in_bytes = 2048M
+                Path config
+                        = Paths.get("/var/lib/lxc", containerName, "config");
+                List<String> content = Files.readAllLines(config);
+
+                StringBuilder line = new StringBuilder();
+                line.append("lxc.cgroup.cpuset.cpus = ");
+
+                for (int i = 0; i < container.getCpuLimit(); i++) {
+                    line.append(String.valueOf(i));
+                    line.append(",");
+                }
+                content.add(line.toString());
+
+                line = new StringBuilder();
+                line.append("lxc.cgroup.memory.limit_in_bytes = ");
+
+                String mem = container.getMemory().toString();
+                mem = mem.replaceFirst("MEG_", "") + "M";
+                line.append(mem);
+                content.add(line.toString());
+
+                Files.write(config, content, Charset.forName("UTF-8"));
 
                 String encoded = encoder.encodeToString(result.getBytes(set));
                 ZKUtils.saveInstallLog(zk, container, encoded);

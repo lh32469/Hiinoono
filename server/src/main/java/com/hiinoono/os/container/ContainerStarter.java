@@ -9,6 +9,10 @@ import com.hiinoono.persistence.zk.ZooKeeperConstants;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
 import com.netflix.hystrix.HystrixCommandProperties;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.LinkedList;
 import javax.xml.bind.JAXBException;
@@ -105,12 +109,10 @@ public class ContainerStarter extends HystrixCommand<Container> {
                     LOG.error(stdout);
                 }
 
-                stdout = new ShellCommand("iptables-save > "
-                        + "/etc/iptables/rules.v4").execute();
-
-                if (!stdout.isEmpty()) {
-                    LOG.error(stdout);
-                }
+                // Update rules for iptables-persistent 
+                stdout = new ShellCommand("iptables-save").execute();
+                Path rules = Paths.get("/etc/iptables/rules.v4");
+                Files.write(rules, stdout.getBytes());
 
                 // Get external IP
                 String addresses = new ShellCommand("hostname -I").execute();
@@ -119,26 +121,6 @@ public class ContainerStarter extends HystrixCommand<Container> {
 
                 container.setSsh("ssh -p " + port + " ubuntu@" + externalIP);
                 container.getPortForwardingPairs().add(port + ":" + 22);
-
-                LinkedList<String> command = new LinkedList<>();
-                command.add("lxc-cgroup");
-                command.add("-n");
-                command.add(containerName);
-                command.add("memory.limit_in_bytes");
-
-                String mem = container.getMemory().toString();
-                mem = mem.replaceFirst("MEG_", "") + "M";
-
-                command.add(mem);
-                new ShellCommand(command).queue();
-
-                command = new LinkedList<>();
-                command.add("lxc-cgroup");
-                command.add("-n");
-                command.add(containerName);
-                command.add("cpuset.cpus");
-                command.add("0");
-                new ShellCommand(command).queue();
 
             } else {
                 LOG.info("Simulate starting: " + containerName);
