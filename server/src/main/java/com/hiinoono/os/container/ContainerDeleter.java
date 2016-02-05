@@ -8,6 +8,9 @@ import com.hiinoono.persistence.zk.ZooKeeperConstants;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
 import com.netflix.hystrix.HystrixCommandProperties;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import javax.xml.bind.JAXBException;
 import org.apache.zookeeper.KeeperException;
@@ -76,6 +79,11 @@ public class ContainerDeleter extends HystrixCommand<Container> {
 
                     LOG.debug("iptables output: " + iptables);
                 }
+
+                // Update rules for iptables-persistent
+                String stdout = new ShellCommand("iptables-save").execute();
+                Path rules = Paths.get("/etc/iptables/rules.v4");
+                Files.write(rules, stdout.getBytes());
 
                 final String statsPath = ZooKeeperConstants.STATS
                         + "/" + containerName;
