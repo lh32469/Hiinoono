@@ -15,11 +15,11 @@
     
     <appender name="Warnings"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-Warnings.log</file>
+        <file>/var/log/hiinoono/Warnings.log</file>
        
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-Warnings.%i.log.zip</fileNamePattern>
+            <fileNamePattern>/var/log/hiinoono/warnings.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -39,11 +39,11 @@
     
     <appender name="Resources"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-Resources.log</file>
+        <file>/var/log/hiinoono/Resources.log</file>
        
         <rollingPolicy 
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-Resources.%i.log.zip</fileNamePattern>
+            <fileNamePattern>/var/log/hiinoono/resources.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -63,11 +63,11 @@
 
     <appender name="Containers"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-Containers.log</file>
+        <file>/var/log/hiinoono/Containers.log</file>
 
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-Containers.%i.log.zip</fileNamePattern>
+            <fileNamePattern>/var/log/hiinoono/containers.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -87,11 +87,11 @@
 
     <appender name="Tenant" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-Tenant.log</file>
+        <file>/var/log/hiinoono/Tenant.log</file>
        
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-Tenant.%i.log.zip</fileNamePattern>
+            <fileNamePattern>/var/log/hiinoono/tenant.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -111,11 +111,11 @@
     
     <appender name="ShellCommand" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-ShellCommand.log</file>
+        <file>/var/log/hiinoono/ShellCommand.log</file>
        
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-ShellCommand.%i.log.zip</fileNamePattern>
+            <fileNamePattern>/var/log/hiinoono/shellCommand.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -136,10 +136,10 @@
     
     <appender name="Root" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/tmp/H-Root.log</file>
+        <file>/var/log/hiinoono/Common.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/tmp/H-Root.%i.log.zip</fileNamePattern>
+            <fileNamePattern>/var/log/hiinoono/common.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
