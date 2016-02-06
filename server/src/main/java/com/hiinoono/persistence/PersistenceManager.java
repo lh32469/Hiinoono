@@ -3,6 +3,7 @@ package com.hiinoono.persistence;
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Tenant;
+import com.hiinoono.jaxb.Manager;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -65,6 +66,9 @@ public interface PersistenceManager {
      * @return
      */
     Stream<Container> getContainers();
+
+
+    Stream<Manager> getManagers();
 
 
     /**

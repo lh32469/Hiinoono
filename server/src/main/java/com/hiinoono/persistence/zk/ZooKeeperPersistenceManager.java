@@ -6,6 +6,7 @@ import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.State;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
+import com.hiinoono.jaxb.Manager;
 import com.hiinoono.managers.PlacementManager;
 import com.hiinoono.os.container.ContainerUtils;
 import com.hiinoono.persistence.PersistenceManager;
@@ -14,7 +15,12 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -39,6 +45,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.slf4j.LoggerFactory;
 
@@ -380,7 +387,42 @@ public class ZooKeeperPersistenceManager implements
 
     @Override
     public Stream<Container> getContainers() {
-       return ZKUtils.getContainers(zooKeeperClient.getZookeeper());
+        return ZKUtils.getContainers(zooKeeperClient.getZookeeper());
+    }
+
+
+    @Override
+    public Stream<Manager> getManagers() {
+
+        ZooKeeper zk = zooKeeperClient.getZookeeper();
+        List<Manager> managers = new LinkedList<>();
+
+        try {
+
+            List<String> nodes
+                    = zk.getChildren(ZooKeeperConstants.MANAGERS, null);
+
+            for (String node : nodes) {
+
+                String path = ZooKeeperConstants.MANAGERS + "/" + node;
+                Stat stat = new Stat();
+                byte[] data = zk.getData(path, false, stat);
+
+                Manager m = new Manager();
+                m.setName(node);
+                m.setNodeId(new String(data));
+                m.setStarted(new Date(stat.getCtime()).toString());
+                managers.add(m);
+
+            }
+
+        } catch (KeeperException |
+                InterruptedException ex) {
+            LOG.error(ex.toString(), ex);
+            throw new NotAcceptableException(ex.toString());
+        }
+
+        return managers.stream();
     }
 
 

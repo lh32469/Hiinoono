@@ -3,6 +3,7 @@ package com.hiinoono.persistence;
 import com.hiinoono.Utils;
 import static com.hiinoono.Utils.now;
 import com.hiinoono.jaxb.Container;
+import com.hiinoono.jaxb.Manager;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.Tenant;
@@ -257,6 +258,14 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
     @Override
     public void deleteContainer(Container container) {
+        //To change body of generated methods, choose Tools | Templates.
+        Logger.getLogger(this.getClass().getName()).severe("Not supported yet.");
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+
+    @Override
+    public Stream<Manager> getManagers() {
         //To change body of generated methods, choose Tools | Templates.
         Logger.getLogger(this.getClass().getName()).severe("Not supported yet.");
         throw new UnsupportedOperationException("Not supported yet.");
