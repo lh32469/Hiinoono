@@ -73,6 +73,12 @@ public class Server {
 
         try {
 
+            // Create Log directory.
+            Path logDir = Paths.get("/var/log/hiinoono");
+            if (!Files.exists(logDir, LinkOption.NOFOLLOW_LINKS)) {
+                Files.createDirectory(logDir);
+            }
+
             Path parent = nodeIdFile.getParent();
             if (!Files.exists(parent, LinkOption.NOFOLLOW_LINKS)) {
                 Files.createDirectory(parent);
