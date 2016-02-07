@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+           xmlns:hn="http://jaxb.hiinoono.com"
+           jaxb:version="2.1"
+           jaxb:extensionBindingPrefixes="xjc"
+           xmlns="http://jaxb.hiinoono.com"
+           targetNamespace="http://jaxb.hiinoono.com"
+           elementFormDefault="qualified">
+  
+ 
+    <xs:element name="manager" type="manager" />
+   
+    <xs:complexType name="manager">
+        <xs:sequence>
+            <xs:element name="name"
+                        type="xs:string"/>
+            <xs:element name="nodeId"
+                        type="xs:string"/>
+            <!-- String for now while sorting out date conversion  -->
+            <xs:element name="started"
+                        type="xs:string"/>
+        </xs:sequence>  
+    </xs:complexType>
+    
+    <!-- 
+    Wrapper element since Jersey default WADL generator only generates 
+    a Manager for a @GET method that returns List<Manager>
+    -->
+    <xs:element name="managers" type="managers" />
+    
+    <xs:complexType name="managers">
+        <xs:sequence>
+            <xs:element name="manager"
+                        minOccurs="0"
+                        maxOccurs="unbounded"
+                        type="manager"/>
+        </xs:sequence>  
+    </xs:complexType>
+
+</xs:schema>
