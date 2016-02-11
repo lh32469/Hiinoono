@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+           xmlns:hn="http://jaxb.hiinoono.com"
+           jaxb:version="2.1"
+           jaxb:extensionBindingPrefixes="xjc"
+           xmlns="http://jaxb.hiinoono.com"
+           targetNamespace="http://jaxb.hiinoono.com"
+           elementFormDefault="qualified">
+  
+    <xs:element name="logEvent" type="logEvent" />
+     
+    <xs:complexType name="logEvent">
+        <xs:sequence>
+            <xs:element name="timeStamp"
+                        type="xs:long"/>
+            <xs:element name="loggerName"
+                        type="xs:string"/>
+            <xs:element name="message"
+                        type="xs:string"/>
+            <xs:element name="level"
+                        type="xs:string"/>
+        </xs:sequence>  
+    </xs:complexType>
+ 
+</xs:schema>
