@@ -1,6 +1,7 @@
 package com.hiinoono.rest;
 
 import com.hiinoono.managers.PlacementManager;
+import com.hiinoono.managers.PortsManager;
 import com.hiinoono.timertask.ContainerStatTimerTask;
 import com.hiinoono.os.container.NodeContainerWatcher;
 import com.hiinoono.persistence.PersistenceManager;
@@ -32,6 +33,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
 import org.glassfish.jersey.server.wadl.WadlFeature;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 
 /**
@@ -107,6 +109,7 @@ public class API extends ResourceConfig {
 
                     new NodeContainerWatcher(zkc);
                     new PlacementManager(zkc);
+                    new PortsManager(zkc);
 
                     bind(ZooKeeperPersistenceManager.class)
                             .to(PersistenceManager.class);
