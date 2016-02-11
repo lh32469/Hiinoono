@@ -83,7 +83,7 @@ public abstract class Manager implements Watcher, ZooKeeperConstants {
                     = zk.getData(managerNodePath, this, null);
             String node = new String(containerMangerNode);
             node = node.split("-")[0] + "..";
-            LOG.info(node + " is " + managerName);
+            LOG.debug(node + " is " + managerName);
             zk.exists(managerNodePath, this);
         }
     }
