@@ -1,5 +1,6 @@
 package com.hiinoono.persistence.zk;
 
+import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Tenant;
 import static com.hiinoono.persistence.zk.ZooKeeperPersistenceManager.TENANTS;
 import com.netflix.hystrix.HystrixCommand;
@@ -7,15 +8,9 @@ import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
 import java.io.StringReader;
-import java.security.GeneralSecurityException;
-import java.security.Key;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -38,8 +33,6 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
     private final ZooKeeper zk;
 
     private final String name;
-
-    private final byte[] key;
 
     private static final HystrixCommandGroupKey GROUP_KEY
             = HystrixCommandGroupKey.Factory.asKey("ZK-Persistence");
@@ -83,9 +76,8 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
      *
      * @param zk
      * @param name Tenant name.
-     * @param key Key used to initially encrypt the Tenant.
      */
-    public GetTenantByName(ZooKeeper zk, String name, byte[] key) {
+    public GetTenantByName(ZooKeeper zk, String name) {
         super(Setter
                 .withGroupKey(GROUP_KEY)
                 .andThreadPoolPropertiesDefaults(THREAD_PROPERTIES)
@@ -94,7 +86,6 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
 
         this.zk = zk;
         this.name = name;
-        this.key = key;
 
     }
 
@@ -104,7 +95,7 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
         try {
             Unmarshaller unMarshaller = jc.createUnmarshaller();
             byte[] data = zk.getData(TENANTS + "/" + name, false, null);
-            String json = new String(decrypt(data));
+            String json = new String(Utils.decrypt(data));
             Tenant t = (Tenant) unMarshaller.unmarshal(new StringReader(json));
             return Optional.of(t);
         } catch (Exception ex) {
@@ -117,19 +108,6 @@ public class GetTenantByName extends HystrixCommand<Optional<Tenant>> {
     @Override
     protected Optional<Tenant> getFallback() {
         return Optional.empty();
-    }
-
-
-    byte[] decrypt(byte[] encrypted) throws GeneralSecurityException {
-
-        // Create key and cipher
-        Key aesKey = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES");
-
-        // decrypt the data
-        cipher.init(Cipher.DECRYPT_MODE, aesKey);
-        return cipher.doFinal(encrypted);
-
     }
 
 
