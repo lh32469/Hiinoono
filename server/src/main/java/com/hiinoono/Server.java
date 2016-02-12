@@ -2,15 +2,17 @@ package com.hiinoono;
 
 import com.hiinoono.rest.API;
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 import javax.ws.rs.ext.RuntimeDelegate;
 import org.glassfish.grizzly.http.server.HttpHandler;
@@ -27,6 +29,11 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
  * @author Lyle T Harris
  */
 public class Server {
+
+    private static final String PROPERTIES_FILE = "/etc/hiinoono/config.props";
+
+    private static final String LOGDIR = "/var/log/hiinoono";
+
 
     /**
      * Starts Grizzly HTTP server exposing JAX-RS Applications defined in this
@@ -69,36 +76,39 @@ public class Server {
 
         URI base = URI.create("http://0.0.0.0:" + port);
 
-        final Path nodeIdFile = Paths.get("/etc/hiinoono/nodeId");
-
         try {
 
             // Create Log directory.
-            Path logDir = Paths.get("/var/log/hiinoono");
+            Path logDir = Paths.get(LOGDIR);
             if (!Files.exists(logDir, LinkOption.NOFOLLOW_LINKS)) {
                 Files.createDirectory(logDir);
             }
 
-            Path parent = nodeIdFile.getParent();
+            File propsFile = new File(PROPERTIES_FILE);
+
+            Path parent = Paths.get(propsFile.toURI()).getParent();
             if (!Files.exists(parent, LinkOption.NOFOLLOW_LINKS)) {
                 Files.createDirectory(parent);
             }
 
-            List<String> lines = Files.readAllLines(nodeIdFile);
-            if (lines.size() == 1) {
-                System.setProperty(Utils.NODE_ID_PROPERTY, lines.get(0));
-                System.out.println("Starting Node: " + lines.get(0));
-            } else {
-                System.err.print("\n\nERROR: ");
-                System.err.println(nodeIdFile + " corrupt\n\n");
-                System.exit(1);
-            }
+            // Load Properies
+            Properties props = new Properties();
+            FileReader reader = new FileReader(propsFile);
+            props.load(reader);
 
-        } catch (NoSuchFileException ex) {
-            String id = UUID.randomUUID().toString() + "\n";
-            Files.write(nodeIdFile, id.getBytes(),
-                    StandardOpenOption.CREATE_NEW,
-                    StandardOpenOption.WRITE);
+            System.getProperties().putAll(props);
+
+        } catch (FileNotFoundException ex) {
+            System.err.println("Creating Default Properties file.");
+            Properties props = new Properties();
+            String id = UUID.randomUUID().toString();
+            props.setProperty(PropertyKey.NODE_ID_PROPERTY.value(), id);
+            props.put(PropertyKey.AES_KEY.value(),
+                    "5A6BE0127FE74038919E0DA921D8EC78");
+            System.getProperties().putAll(props);
+            FileWriter propsFile = new FileWriter(PROPERTIES_FILE);
+            props.store(propsFile, "Default Properties");
+
         }
 
         startServer(base);
