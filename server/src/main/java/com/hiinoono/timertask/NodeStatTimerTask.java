@@ -106,7 +106,7 @@ public class NodeStatTimerTask extends TimerTask {
                 }
 
             } else {
-                LOG.info("No memory stats, " + MEM_INFO + " not found");
+                LOG.debug("No memory stats, " + MEM_INFO + " not found");
             }
 
             if (System.getProperty("MOCK") == null) {
