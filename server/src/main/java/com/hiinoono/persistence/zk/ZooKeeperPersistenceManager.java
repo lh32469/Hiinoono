@@ -15,10 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -69,19 +65,6 @@ public class ZooKeeperPersistenceManager implements
 
     final static private org.slf4j.Logger LOG
             = LoggerFactory.getLogger(ZooKeeperPersistenceManager.class);
-
-    /**
-     * Default 256 bit key for encrypting data.
-     */
-    private static final String DEFAULT_KEY
-            = "5A6BE0127FE74038919E0DA921D8EC78";
-
-    /**
-     * Actual 256 bit key for encrypting data. Will eventually be read from a
-     * file only readable by root on the server at startup.
-     */
-    private static final byte[] key
-            = System.getProperty("KEY", DEFAULT_KEY).getBytes();
 
 
     static {
@@ -248,7 +231,7 @@ public class ZooKeeperPersistenceManager implements
     public Optional<Tenant> getTenantByName(String name) {
         LOG.debug(name);
         ZooKeeper zk = zooKeeperClient.getZookeeper();
-        GetTenantByName get = new GetTenantByName(zk, name, key);
+        GetTenantByName get = new GetTenantByName(zk, name);
         return get.execute();
     }
 
@@ -256,7 +239,7 @@ public class ZooKeeperPersistenceManager implements
     public Future<Optional<Tenant>> getTenantByNameQueued(String name) {
         LOG.debug(name);
         ZooKeeper zk = zooKeeperClient.getZookeeper();
-        GetTenantByName get = new GetTenantByName(zk, name, key);
+        GetTenantByName get = new GetTenantByName(zk, name);
         return get.queue();
     }
 
