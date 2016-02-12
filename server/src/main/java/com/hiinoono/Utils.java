@@ -21,20 +21,19 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 public class Utils {
 
-    public static final String NODE_ID_PROPERTY = "NodeId";
+    /**
+     * Actual 256 bit key for encrypting data. Read from a properties file only
+     * readable by root on the server at startup.
+     */
+    private static final String KEY
+            = System.getProperty(PropertyKey.AES_KEY.value());
 
     /**
-     * Default 256 bit key for encrypting data.
+     * Convert KEY String to byte array for SecretKeySpec if KEY is not null and
+     * not empty.
      */
-    private static final String DEFAULT_KEY
-            = "5A6BE0127FE74038919E0DA921D8EC78";
-
-    /**
-     * Actual 256 bit key for encrypting data. Will eventually be read from a
-     * file only readable by root on the server at startup.
-     */
-    private static final byte[] key
-            = System.getProperty("KEY", DEFAULT_KEY).getBytes();
+    private static final byte[] KEY_BYTES
+            = (KEY == null || KEY.isEmpty()) ? null : KEY.getBytes();
 
 
     /**
@@ -86,8 +85,12 @@ public class Utils {
     public static final byte[] encrypt(byte[] clear) throws
             GeneralSecurityException {
 
+        if (KEY_BYTES == null) {
+            return clear;
+        }
+
         // Create key and cipher
-        Key aesKey = new SecretKeySpec(key, "AES");
+        Key aesKey = new SecretKeySpec(KEY_BYTES, "AES");
         Cipher cipher = Cipher.getInstance("AES");
 
         // encrypt the data
@@ -100,8 +103,12 @@ public class Utils {
     public static final byte[] decrypt(byte[] encrypted) throws
             GeneralSecurityException {
 
+        if (KEY_BYTES == null) {
+            return encrypted;
+        }
+
         // Create key and cipher
-        Key aesKey = new SecretKeySpec(key, "AES");
+        Key aesKey = new SecretKeySpec(KEY_BYTES, "AES");
         Cipher cipher = Cipher.getInstance("AES");
 
         // decrypt the data
@@ -138,7 +145,7 @@ public class Utils {
      */
     public static String getNodeId() {
         // Placeholder
-        return System.getProperty(NODE_ID_PROPERTY);
+        return System.getProperty(PropertyKey.NODE_ID_PROPERTY.value());
     }
 
 
