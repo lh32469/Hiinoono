@@ -2,6 +2,7 @@ package com.hiinoono;
 
 import com.hiinoono.jaxb.Container;
 import com.hiinoono.jaxb.Containers;
+import com.hiinoono.jaxb.Manager;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
@@ -18,7 +19,6 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -37,7 +37,6 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -73,6 +72,8 @@ public class Client {
     private static final String SERVICE = "service";
 
     private static final String TENANTS = "tenants";
+
+    private static final String MANAGERS = "managers";
 
     private static final String NODES = "nodes";
 
@@ -337,15 +338,16 @@ public class Client {
             System.out.printf(format,
                     "Tenant", "Joined");
             for (Tenant tenant : tenants.getTenant()) {
-                XMLGregorianCalendar joined = tenant.getJoined();
-                ZonedDateTime zdt
-                        = joined.toGregorianCalendar().toZonedDateTime();
+                Date joined
+                        = tenant.getJoined().toGregorianCalendar().getTime();
                 System.out.printf(format,
-                        tenant.getName(), DTF.format(zdt));
+                        tenant.getName(), DTF.format(joined));
             }
             System.out.println("\nTotal: "
                     + tenants.getTenant().size() + "\n");
 
+        } else if (type.equalsIgnoreCase(MANAGERS)) {
+            listManagers(c, URI.create(svc));
         } else if (type.equalsIgnoreCase(NODES)) {
             HClient.Node t = HClient.node(c, URI.create(svc));
             Nodes nodes = t.getAsNodes();
@@ -402,12 +404,11 @@ public class Client {
 
             System.out.println("");
             for (User _user : users) {
-                XMLGregorianCalendar joined = _user.getJoined();
+                Date joined
+                        = _user.getJoined().toGregorianCalendar().getTime();
                 if (joined != null) {
-                    ZonedDateTime zdt
-                            = joined.toGregorianCalendar().toZonedDateTime();
                     System.out.printf(format,
-                            _user.getName(), DTF.format(zdt));
+                            _user.getName(), DTF.format(joined));
                 } else {
                     System.out.printf(format,
                             _user.getName(), "Unknown");
@@ -503,6 +504,13 @@ public class Client {
             formatter.printHelp(CLIENT, HiinoonoOptions.getOptions(user));
             System.exit(1);
         }
+    }
+
+
+    private static void listManagers(javax.ws.rs.client.Client c, URI svc) {
+        HClient.Node node = HClient.node(c, svc);
+        List<Manager> managers
+                = node.managers().getAsManagers().getManager();
     }
 
 

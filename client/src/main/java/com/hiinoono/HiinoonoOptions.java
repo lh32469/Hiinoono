@@ -110,7 +110,7 @@ public class HiinoonoOptions {
     static final void addHiinoonoAdminOptions(Options options) {
 
         options.addOption("l", LIST, true,
-                "List tenants, nodes, instances, containers ");
+                "List tenants, nodes, instances, containers, managers ");
 
         Option addTenant = Option.builder()
                 .hasArgs()
