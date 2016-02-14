@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   
+    <property name="LOGDIR" value="/var/log/hiinoono" />
+    
     <appender name="STDOUT" 
               class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -13,13 +15,26 @@
         </filter>
     </appender>   
     
+    <appender name="Redis" 
+              class="com.hiinoono.log.RedisAppender">
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+            <!-- this quadruples logging throughput -->
+            <immediateFlush>true</immediateFlush>
+        </encoder> 
+        <filter name="Bob"
+                class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
+    </appender>   
+    
     <appender name="Warnings"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/hiinoono/Warnings.log</file>
+        <file>${LOGDIR}/Warnings.log</file>
        
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/log/hiinoono/warnings.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${LOGDIR}/warnings.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -37,13 +52,37 @@
         </filter>
     </appender> 
     
+    <appender name="Errors"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGDIR}/Errors.log</file>
+       
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${LOGDIR}/errors.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy 
+            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender> 
+    
     <appender name="Resources"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/hiinoono/Resources.log</file>
+        <file>${LOGDIR}/Resources.log</file>
        
         <rollingPolicy 
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/log/hiinoono/resources.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${LOGDIR}/resources.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -61,13 +100,53 @@
         </filter>
     </appender> 
 
+    <appender name="Container-Thread" 
+              class="ch.qos.logback.classic.sift.SiftingAppender">
+        
+        <!-- This is MDC value -->
+        <!-- We will assign a value to 'logFileName' via Java code -->
+        <discriminator>
+            <key>logFileName</key>
+            <defaultValue>head0</defaultValue>
+        </discriminator>
+                
+        <sift>
+            <!-- A standard RollingFileAppender, the log file is based on 'logFileName' at runtime  -->
+            <appender name="FILE-${logFileName}"
+                      class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOGDIR}/${logFileName}.log</file>
+
+                <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                    <Pattern>
+                        %d{yyyy-MM-dd HH:mm:ss} %mdc [%thread] %level %logger{35} - %msg%n
+                    </Pattern>
+                </encoder>
+
+                <rollingPolicy
+                    class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+                    <FileNamePattern>${LOGDIR}/${logFileName}.%i.log.zip
+                    </FileNamePattern>
+                    <MinIndex>1</MinIndex>
+                    <MaxIndex>5</MaxIndex>
+                </rollingPolicy>
+
+                <triggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                    <MaxFileSize>5MB</MaxFileSize>
+                </triggeringPolicy>
+
+            </appender>
+        </sift>
+        
+    </appender>
+    
     <appender name="Containers"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/hiinoono/Containers.log</file>
+        <file>${LOGDIR}/Containers.log</file>
 
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/log/hiinoono/containers.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${LOGDIR}/containers.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -87,11 +166,35 @@
 
     <appender name="Tenant" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/hiinoono/Tenant.log</file>
+        <file>${LOGDIR}/Tenant.log</file>
        
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/log/hiinoono/tenant.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${LOGDIR}/tenant.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>3</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy
+            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>5MB</maxFileSize>
+        </triggeringPolicy>
+    
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss} %-5level %C{0} %M %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender> 
+    
+    <appender name="Managers" 
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGDIR}/Managers.log</file>
+       
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${LOGDIR}/managers.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -111,11 +214,11 @@
     
     <appender name="ShellCommand" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/hiinoono/ShellCommand.log</file>
+        <file>${LOGDIR}/ShellCommand.log</file>
        
         <rollingPolicy
             class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/log/hiinoono/shellCommand.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${LOGDIR}/shellCommand.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -136,10 +239,10 @@
     
     <appender name="Root" 
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/hiinoono/Common.log</file>
+        <file>${LOGDIR}/Common.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/var/log/hiinoono/common.%i.log.zip</fileNamePattern>
+            <fileNamePattern>${LOGDIR}/common.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>3</maxIndex>
         </rollingPolicy>
@@ -157,29 +260,46 @@
         </filter>
     </appender> 
  
-    <logger name="com.hiinoono.rest" level="DEBUG">
+    <logger name="com.hiinoono.rest" 
+            level="DEBUG">
         <appender-ref ref="Resources" />
     </logger>
     
-    <logger name="com.hiinoono.rest.tenant" level="DEBUG">
+    <logger name="com.hiinoono.rest.tenant" 
+            level="DEBUG">
         <appender-ref ref="Tenant" />
     </logger>
     
-    <logger name="com.hiinoono.rest.container" level="DEBUG">
+    <logger name="com.hiinoono.rest.container" 
+            level="TRACE">
         <appender-ref ref="Containers" />
     </logger>
 
-    <logger name="com.hiinoono.os.container" level="DEBUG">
+    <logger name="com.hiinoono.os.container" 
+            level="DEBUG">
         <appender-ref ref="Containers" />
+    </logger> 
+    
+    <logger name="com.hiinoono.managers" 
+            level="DEBUG">
+        <appender-ref ref="Managers" />
     </logger>
     
-    <logger name="com.hiinoono.os.ShellCommand" level="DEBUG">
+    <logger name="com.hiinoono.os.ShellCommand" 
+            level="DEBUG">
         <appender-ref ref="ShellCommand" />
+    </logger>
+    
+    <logger name="Redis" 
+            level="TRACE">
+        <appender-ref ref="Redis" />
     </logger>
 
     <root level="INFO">
         <appender-ref ref="Root" />
         <appender-ref ref="Warnings" />
+        <appender-ref ref="Errors" />
+        <appender-ref ref="Redis" />
     </root>
 
 </configuration>
