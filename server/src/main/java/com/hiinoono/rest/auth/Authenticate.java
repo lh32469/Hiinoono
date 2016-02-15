@@ -4,6 +4,7 @@ import com.hiinoono.persistence.PersistenceManager;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandProperties;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -31,6 +32,9 @@ public class Authenticate extends HystrixCommand<Boolean> {
             .withExecutionTimeoutInMilliseconds(5000)
             .withCircuitBreakerEnabled(false);
 
+    final static private org.slf4j.Logger LOG
+            = LoggerFactory.getLogger(Authenticate.class);
+
 
     public Authenticate(PersistenceManager pm,
             String tenant,
@@ -52,15 +56,22 @@ public class Authenticate extends HystrixCommand<Boolean> {
 
     @Override
     protected Boolean run() throws Exception {
-        String storedHash = pm.getHash(tenant, username);
-        // So two Users with same password will showup as different hashes.
-        String currentHash = pm.hash(tenant + username + password);
+        try {
+            LOG.debug(tenant + "/" + username);
+            String storedHash = pm.getHash(tenant, username);
+            // So two Users with same password will showup as different hashes.
+            String currentHash = pm.hash(tenant + username + password);
 
-        if (currentHash.equals(storedHash)) {
-            return true;
-        } else {
-            // Need to throw Exception here so Hystrix registers failure.
-            throw new IllegalArgumentException("Bad Credentials");
+            if (currentHash.equals(storedHash)) {
+                return true;
+            } else {
+                // Need to throw Exception here so Hystrix registers failure.
+                throw new IllegalArgumentException("Bad Credentials");
+            }
+        } catch (Exception ex) {
+            LOG.error(ex.toString());
+            LOG.trace(ex.toString(), ex);
+            throw ex;
         }
     }
 
