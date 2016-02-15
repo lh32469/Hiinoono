@@ -2,7 +2,6 @@ package com.hiinoono.rest.tenant;
 
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Tenant;
-import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
@@ -25,6 +24,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import static org.apache.commons.lang.StringUtils.isBlank;
 import org.slf4j.LoggerFactory;
 
 
@@ -49,10 +49,9 @@ public class TenantResource {
 
 
     @GET
-    @Path("list")
     @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
             message = "You are not permitted to list tenants.")
-    public List<Tenant> getTenantsAsList() {
+    public List<Tenant> getTenants() {
 
         // Clear passwords before sending
         return pm.getTenants().map((tenant) -> {
@@ -65,38 +64,31 @@ public class TenantResource {
     }
 
 
-    @GET
-    @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
-            message = "You are not permitted to list tenants.")
-    public Tenants getTenants() {
-
-        Tenants t = new Tenants();
-        t.getTenants().addAll(getTenantsAsList());
-        return t;
-
-    }
-
-
     @POST
     @Path("add")
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     @Produces(MediaType.TEXT_PLAIN)
     @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN},
             message = "You are not permitted to add tenants.")
-    public Response addTenant(Tenant t) {
-        LOG.info(t.getName());
+    public Response addTenant(Tenant tenant) {
+
+        LOG.info(tenant.getName());
+
+        if (isBlank(tenant.getName())) {
+            throw new NotAcceptableException("Tenant Name is not set");
+        }
 
         // Clear any users provided from Client and add default Admin User.
-        t.getUsers().clear();
+        tenant.getUsers().clear();
         User u = new User();
         u.setName("admin");
         u.setJoined(Utils.now());
         String password = UUID.randomUUID().toString().substring(28);
-        u.setPassword(pm.hash(t.getName() + "admin" + password));
-        t.getUsers().add(u);
-        t.setJoined(Utils.now());
+        u.setPassword(pm.hash(tenant.getName() + "admin" + password));
+        tenant.getUsers().add(u);
+        tenant.setJoined(Utils.now());
 
-        pm.addTenant(t);
+        pm.addTenant(tenant);
         return Response.ok("Password: " + password).build();
     }
 
