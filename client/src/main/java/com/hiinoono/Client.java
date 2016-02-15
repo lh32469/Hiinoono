@@ -1,13 +1,11 @@
 package com.hiinoono;
 
 import com.hiinoono.jaxb.Container;
-import com.hiinoono.jaxb.Containers;
 import com.hiinoono.jaxb.Manager;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Nodes;
 import com.hiinoono.jaxb.SiteInfo;
 import com.hiinoono.jaxb.Tenant;
-import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.rest.api.model.HClient;
 import java.io.FileInputStream;
@@ -31,6 +29,7 @@ import java.util.Properties;
 import java.util.Scanner;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -45,12 +44,14 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
+import org.eclipse.persistence.jaxb.rs.MOXyJsonProvider;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.slf4j.LoggerFactory;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.glassfish.jersey.client.filter.EncodingFilter;
 import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.message.GZipEncoder;
+import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 
 
 /**
@@ -208,6 +209,12 @@ public class Client {
         c.register(MultiPartFeature.class);
         c.register(GZipEncoder.class);
         c.register(EncodingFilter.class);
+        c.register(MOXyJsonProvider.class);
+
+        MoxyJsonConfig config = new MoxyJsonConfig();
+        config.setFormattedOutput(true);
+        config.setIncludeRoot(true);
+        c.register(config.resolver());
 
         if (cmd.hasOption(LOGGING)) {
             c.register(LoggingFilter.class);
@@ -331,20 +338,24 @@ public class Client {
         String type = cmd.getOptionValue(LIST);
         if (type.equalsIgnoreCase(TENANTS)) {
             HClient.Tenant t = HClient.tenant(c, URI.create(svc));
-            Tenants tenants = t.getAsTenants();
+
+            List<Tenant> tenants
+                    = t.getAs(new GenericType<List<Tenant>>() {
+                    });
+
             // TODO: Better formatting
             final String format = "%-15s%-25s\n";
             System.out.println("");
             System.out.printf(format,
                     "Tenant", "Joined");
-            for (Tenant tenant : tenants.getTenant()) {
+            for (Tenant tenant : tenants) {
                 Date joined
                         = tenant.getJoined().toGregorianCalendar().getTime();
                 System.out.printf(format,
                         tenant.getName(), DTF.format(joined));
             }
             System.out.println("\nTotal: "
-                    + tenants.getTenant().size() + "\n");
+                    + tenants.size() + "\n");
 
         } else if (type.equalsIgnoreCase(MANAGERS)) {
             listManagers(c, URI.create(svc));
@@ -398,8 +409,12 @@ public class Client {
             System.out.println("");
 
         } else if (type.equalsIgnoreCase(USERS)) {
-            HClient.User u = HClient.user(c, URI.create(svc));
-            List<User> users = u.list().getAsUsers().getUser();
+            HClient.User.List list = HClient.user(c, URI.create(svc)).list();
+
+            List<User> users
+                    = list.getAs(new GenericType<List<User>>() {
+                    });
+
             final String format = "%-15s%-25s\n";
 
             System.out.println("");
@@ -418,7 +433,12 @@ public class Client {
 
         } else if (type.equalsIgnoreCase(CONTAINERS)) {
             HClient.Container cont = HClient.container(c, URI.create(svc));
-            Containers containers = cont.list().getAsContainers();
+
+            List<Container> containers
+                    = cont.list().getAs(new GenericType<List<Container>>() {
+                    });
+
+            //Containers containers = cont.list().getAsContainers();
             final String hinoonoAdminFormat
                     = "%-12s%-11s%-11s%-12s%-10s%-12s%-25s\n";
             final String tenantAdminformat
@@ -457,7 +477,7 @@ public class Client {
                         "Added");
             }
 
-            for (Container container : containers.getContainer()) {
+            for (Container container : containers) {
 
                 Date added
                         = container.getAdded().toGregorianCalendar().getTime();
@@ -525,11 +545,6 @@ public class Client {
         Tenant newTenant = new Tenant();
         newTenant.setName(name);
 
-        /* 
-         * Use the XML option since the XML/JAXB option fails since 
-         * when the WADL is compiled the @XmlRootElement(name = "tenant")
-         * doesn't get added to the generated class.
-         */
         Response response = add.postJsonAsTextPlain(newTenant, Response.class);
 
         if (response.getStatus() >= 400) {
@@ -574,15 +589,20 @@ public class Client {
             javax.ws.rs.client.Client c,
             String svc) {
 
-        String name = cmd.getOptionValue(DELETE_TENANT);
+        String[] names = cmd.getOptionValues(DELETE_TENANT);
         HClient.Tenant t = HClient.tenant(c, URI.create(svc));
-        HClient.Tenant.DeleteName request = t.deleteName(name);
 
-        Response response = request.getAs(Response.class);
+        for (String name : names) {
+            LOG.info("Deleting: " + name);
 
-        if (response.getStatus() >= 400) {
-            throw new WebApplicationException(response);
+            HClient.Tenant.DeleteName request = t.deleteName(name);
+            Response response = request.getAs(Response.class);
+
+            if (response.getStatus() >= 400) {
+                throw new WebApplicationException(response);
+            }
         }
+
     }
 
 
@@ -590,14 +610,18 @@ public class Client {
             javax.ws.rs.client.Client c,
             String svc) {
 
-        String userName = cmd.getOptionValue(DELETE_USER);
+        String[] names = cmd.getOptionValues(DELETE_USER);
         HClient.User u = HClient.user(c, URI.create(svc));
-        HClient.User.DeleteName request = u.deleteName(userName);
 
-        Response response = request.getAs(Response.class);
+        for (String name : names) {
+            LOG.info("Deleting: " + name);
+            HClient.User.DeleteName request = u.deleteName(name);
 
-        if (response.getStatus() >= 400) {
-            throw new WebApplicationException(response);
+            Response response = request.getAs(Response.class);
+
+            if (response.getStatus() >= 400) {
+                throw new WebApplicationException(response);
+            }
         }
 
     }
