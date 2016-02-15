@@ -3,7 +3,6 @@ package com.hiinoono.rest.user;
 import com.hiinoono.Utils;
 import com.hiinoono.jaxb.Tenant;
 import com.hiinoono.jaxb.User;
-import com.hiinoono.jaxb.Users;
 import com.hiinoono.persistence.PersistenceManager;
 import com.hiinoono.rest.auth.HiinoonoRolesAllowed;
 import com.hiinoono.rest.auth.Roles;
@@ -24,6 +23,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import static org.apache.commons.lang.StringUtils.isBlank;
 import org.slf4j.LoggerFactory;
 
 
@@ -52,10 +52,23 @@ public class UserResource {
     @Produces(MediaType.TEXT_PLAIN)
     @HiinoonoRolesAllowed(roles = {Roles.T_ADMIN},
             message = "You are not permitted to add users.")
-    public Response addUser(User u) {
-        LOG.info(u.getName());
+    public Response addUser(User user) {
+        LOG.info(user.getName());
 
-        final String tenantName = u.getTenant();
+        if (isBlank(user.getName())) {
+            throw new NotAcceptableException("User Name is not set");
+        }
+
+        // Principal name is tenant/user
+        String principalName = sc.getUserPrincipal().getName();
+        LOG.debug("Principal Name: " + principalName);
+
+        String tenantName = user.getTenant();
+
+        if (isBlank(tenantName)) {
+            tenantName = principalName.split("/")[0];
+            user.setTenant(tenantName);
+        }
 
         // Make sure Tenant names match
         if (!sc.isUserInRole(tenantName + "/admin")) {
@@ -63,16 +76,18 @@ public class UserResource {
                     + " add Users to Tenant: " + tenantName);
         }
 
-        Optional<Tenant> t = pm.getTenantByName(tenantName);
+        Optional<Tenant> optional = pm.getTenantByName(tenantName);
 
-        if (!t.isPresent()) {
+        if (!optional.isPresent()) {
             throw new NotAcceptableException("Tenant " + tenantName
                     + " doesn't exist.");
         }
 
-        List<User> existingUsers = t.get().getUsers();
+        final Tenant tenant = optional.get();
 
-        for (User user : existingUsers) {
+        List<User> existingUsers = tenant.getUsers();
+
+        for (User u : existingUsers) {
             if (user.getName().equals(u.getName())) {
                 throw new NotAcceptableException("User " + u.getName()
                         + " already exists.");
@@ -80,11 +95,12 @@ public class UserResource {
         }
 
         String password = UUID.randomUUID().toString().substring(28);
-        u.setJoined(Utils.now());
-        u.setPassword(Utils.hash(u.getTenant() + u.getName() + password));
-        existingUsers.add(u);
+        user.setJoined(Utils.now());
+        user.setPassword(Utils.hash(user.getTenant()
+                + user.getName() + password));
+        existingUsers.add(user);
 
-        pm.persist(t.get());
+        pm.persist(tenant);
         return Response.ok("Password: " + password).build();
     }
 
@@ -98,7 +114,7 @@ public class UserResource {
     @Path("list")
     @HiinoonoRolesAllowed(roles = {Roles.T_ADMIN},
             message = "You are not permitted to list users.")
-    public Users list() {
+    public List<User> list() {
 
         // Principal name is tenant/user
         String principalName = sc.getUserPrincipal().getName();
@@ -108,14 +124,12 @@ public class UserResource {
         LOG.debug(tenantName);
 
         // Tenant must exist since it's authenticated.
-        Tenant t = pm.getTenantByName(tenantName).get();
-        t.getUsers().stream().forEach((user) -> {
+        Tenant tenant = pm.getTenantByName(tenantName).get();
+        tenant.getUsers().stream().forEach((user) -> {
             user.setPassword("***");
         });
-        Users users = new Users();
-        users.getUsers().addAll(t.getUsers());
 
-        return users;
+        return tenant.getUsers();
     }
 
 
