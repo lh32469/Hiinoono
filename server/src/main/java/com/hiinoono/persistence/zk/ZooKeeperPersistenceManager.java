@@ -287,12 +287,14 @@ public class ZooKeeperPersistenceManager implements
 
 
     @Override
-    public String getHash(String tenant, String username) {
-        Optional<Tenant> t = getTenantByName(tenant);
+    public String getHash(String tenantName, String userName) {
+        Optional<Tenant> optional = getTenantByName(tenantName);
 
-        if (t.isPresent()) {
-            Optional<User> user = t.get().getUsers().stream()
-                    .filter(u -> u.getName().equals(username))
+        if (optional.isPresent()) {
+            Tenant tenant = optional.get();
+            LOG.info("Found Tenant: " + tenant.getName());
+            Optional<User> user = tenant.getUsers().stream()
+                    .filter(u -> u.getName().equals(userName))
                     .findFirst();
 
             if (user.isPresent()) {
@@ -304,7 +306,7 @@ public class ZooKeeperPersistenceManager implements
         }
 
         // No possible match
-        LOG.info("No user found: " + tenant + "/" + username);
+        LOG.info("No user found: " + tenantName + "/" + userName);
         return UUID.randomUUID().toString();
     }
 
