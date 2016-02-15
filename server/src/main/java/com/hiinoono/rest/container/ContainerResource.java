@@ -1,7 +1,6 @@
 package com.hiinoono.rest.container;
 
 import com.hiinoono.jaxb.Container;
-import com.hiinoono.jaxb.Containers;
 import com.hiinoono.jaxb.DiskOption;
 import com.hiinoono.jaxb.MemOption;
 import com.hiinoono.jaxb.State;
@@ -20,8 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -84,9 +81,9 @@ public class ContainerResource {
         c.setMemory(MemOption.MEG_512);
         c.setDisk(DiskOption.GIG_5);
         c.setCpuLimit(2);
-        
-        NumberFormat nf =  new DecimalFormat("'GIG_'#");
-        
+
+        NumberFormat nf = new DecimalFormat("'GIG_'#");
+
         System.out.println("Value: " + DiskOption.GIG_5);
         try {
             System.out.println("Parsed: "
@@ -94,9 +91,8 @@ public class ContainerResource {
             System.out.println("Parsed: "
                     + nf.parse(DiskOption.GIG_40.toString()));
         } catch (ParseException ex) {
-           LOG.error(ex.toString());
+            LOG.error(ex.toString());
         }
-
 
         return c;
     }
@@ -288,7 +284,7 @@ public class ContainerResource {
     @Path("list")
     @HiinoonoRolesAllowed(roles = {Roles.H_ADMIN, Roles.T_ADMIN, Roles.USER},
             message = "You are not permitted to list containers.")
-    public Containers list() {
+    public List<Container> list() {
 
         // Principal name is tenant/user
         String principalName = sc.getUserPrincipal().getName();
@@ -315,10 +311,7 @@ public class ContainerResource {
 
         }
 
-        Containers containers = new Containers();
-        containers.getContainers().addAll(list);
-
-        return containers;
+        return list;
     }
 
 
