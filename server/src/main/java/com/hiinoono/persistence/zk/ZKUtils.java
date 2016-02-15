@@ -98,7 +98,7 @@ public class ZKUtils implements ZooKeeperConstants {
         LOG.debug(path);
 
         Unmarshaller um = jc.createUnmarshaller();
-        String json = new String(Utils.decrypt2(zk.getData(path, false, null)));
+        String json = new String(Utils.decrypt(zk.getData(path, false, null)));
         LOG.trace(json);
         return um.unmarshal(new StringReader(json));
     }
@@ -115,7 +115,7 @@ public class ZKUtils implements ZooKeeperConstants {
         Marshaller m = jc.createMarshaller();
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         m.marshal(obj, mem);
-        zk.create(path, Utils.encrypt2(mem.toByteArray()),
+        zk.create(path, Utils.encrypt(mem.toByteArray()),
                 ACL, CreateMode.PERSISTENT);
     }
 
@@ -131,7 +131,7 @@ public class ZKUtils implements ZooKeeperConstants {
         Marshaller m = jc.createMarshaller();
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         m.marshal(obj, mem);
-        zk.create(path, Utils.encrypt2(mem.toByteArray()),
+        zk.create(path, Utils.encrypt(mem.toByteArray()),
                 ACL, CreateMode.EPHEMERAL);
     }
 
@@ -147,7 +147,7 @@ public class ZKUtils implements ZooKeeperConstants {
         Marshaller m = jc.createMarshaller();
         m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         m.marshal(obj, mem);
-        zk.setData(path, Utils.encrypt2(mem.toByteArray()), -1);
+        zk.setData(path, Utils.encrypt(mem.toByteArray()), -1);
     }
 
 
@@ -182,7 +182,7 @@ public class ZKUtils implements ZooKeeperConstants {
                 + "/" + ContainerUtils.getZKname(c)
                 + "-install.log";
 
-        zk.create(logPath, Utils.encrypt2(log.getBytes()),
+        zk.create(logPath, Utils.encrypt(log.getBytes()),
                 ACL, CreateMode.PERSISTENT);
     }
 
