@@ -7,7 +7,6 @@ import com.hiinoono.jaxb.Manager;
 import com.hiinoono.jaxb.Node;
 import com.hiinoono.jaxb.Status;
 import com.hiinoono.jaxb.Tenant;
-import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.jaxb.User;
 import com.hiinoono.jaxb.Value;
 import java.io.ByteArrayOutputStream;
@@ -52,8 +51,7 @@ public class UnitTestPersistenceManager implements PersistenceManager {
 
         Class[] classes = {
             Node.class,
-            Tenant.class,
-            Tenants.class};
+            Tenant.class};
 
         try {
             Map<String, Object> properties = new HashMap<>();
