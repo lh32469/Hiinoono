@@ -6,7 +6,7 @@
     <groupId>com.hiinoono</groupId>
     <artifactId>server</artifactId>
     <packaging>jar</packaging>
-    <version>1.0</version>
+    <version>1.1</version>
     <name>Hiinoono Server</name>
 
     <dependencyManagement>
