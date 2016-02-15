@@ -2,13 +2,14 @@ package com.hiinoono.rest.tenant;
 
 import com.hiinoono.Server;
 import com.hiinoono.jaxb.Tenant;
-import com.hiinoono.jaxb.Tenants;
 import com.hiinoono.rest.API;
 import java.net.URI;
+import java.util.List;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -68,8 +69,10 @@ public class TenantResourceTest extends JerseyTest {
     @Test
     public void testGetTenants() {
         Response response = target("/tenant").request().get();
-        Tenants tenants = response.readEntity(Tenants.class);
-        assertEquals(2, tenants.getTenants().size());
+        List<Tenant> tenants
+                = response.readEntity(new GenericType<List<Tenant>>() {
+                });
+        assertEquals(2, tenants.size());
     }
 
 
@@ -78,10 +81,13 @@ public class TenantResourceTest extends JerseyTest {
      */
     @Test
     public void addTenant() {
+
+        GenericType<List<Tenant>> gt = new GenericType<List<Tenant>>() {
+        };
         Response response = target("/tenant").request().get();
-        Tenants tenants = response.readEntity(Tenants.class);
+        List<Tenant> tenants = response.readEntity(gt);
         boolean found = false;
-        for (Tenant tenant : tenants.getTenants()) {
+        for (Tenant tenant : tenants) {
             if (tenant.getName().equals(TENANT_NAME)) {
                 found = true;
             }
@@ -97,9 +103,10 @@ public class TenantResourceTest extends JerseyTest {
         assertTrue(reply.startsWith("Password: "));
 
         response = target("/tenant").request().get();
-        tenants = response.readEntity(Tenants.class);
+        tenants = response.readEntity(new GenericType<List<Tenant>>() {
+        });
         found = false;
-        for (Tenant tenant : tenants.getTenants()) {
+        for (Tenant tenant : tenants) {
             if (tenant.getName().equals(TENANT_NAME)) {
                 found = true;
             }
