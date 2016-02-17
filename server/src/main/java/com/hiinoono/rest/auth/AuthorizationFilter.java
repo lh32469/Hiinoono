@@ -117,6 +117,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         ctxt.abortWith(Response
                 .status(Response.Status.UNAUTHORIZED)
                 .entity(BAD_CREDENTIALS)
+                .header("WWW-Authenticate", "Basic")
                 .build());
     }
 
