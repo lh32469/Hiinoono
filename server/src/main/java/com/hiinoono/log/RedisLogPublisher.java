@@ -1,5 +1,6 @@
 package com.hiinoono.log;
 
+import com.hiinoono.Utils;
 import com.hiinoono.jaxb.LogEvent;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
@@ -52,7 +53,7 @@ public class RedisLogPublisher extends HystrixCommand<String> {
 
         try {
             Map<String, Object> properties = new HashMap<>();
-            properties.put("eclipselink.media-type", "application/json");
+            //properties.put("eclipselink.media-type", "application/json");
             jc = JAXBContextFactory.createContext(classes, properties);
 
         } catch (JAXBException ex) {
@@ -75,13 +76,25 @@ public class RedisLogPublisher extends HystrixCommand<String> {
 
     @Override
     protected String run() throws Exception {
+        
         Marshaller m = jc.createMarshaller();
         ByteArrayOutputStream mem = new ByteArrayOutputStream();
         m.marshal(event, mem);
 
         // Experimental for now..   Publishing and saving for dev/testing.
         jedis = pool.getResource();
-        jedis.publish("Common", mem.toString());
+        jedis.publish("Common.xml", mem.toString());
+
+        final String node = Utils.getNodeId().split("-")[0];
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(node);
+        sb.append("  ");
+        sb.append(event.getLoggerName());
+        sb.append("  ");
+        sb.append(event.getMessage());
+
+        jedis.publish("Common.txt", sb.toString());
 
         jedis.select(5);
         String key = event.getTimeStamp() + ".log";
