@@ -7,6 +7,7 @@ import ch.qos.logback.core.LogbackException;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import ch.qos.logback.core.status.Status;
+import com.hiinoono.Utils;
 import com.hiinoono.jaxb.LogEvent;
 import com.netflix.hystrix.strategy.HystrixPlugins;
 import java.util.LinkedList;
@@ -34,6 +35,8 @@ public class RedisAppender implements Appender {
 
     private boolean started;
 
+    private final String nodeId;
+
     private final List<Filter> filters = new LinkedList<>();
 
 
@@ -57,6 +60,8 @@ public class RedisAppender implements Appender {
         } else {
             pool = new JedisPool(cfg, redisHost, port, 0, redisPass);
         }
+
+        nodeId = Utils.getNodeId();
     }
 
 
@@ -72,6 +77,7 @@ public class RedisAppender implements Appender {
             le.setLoggerName(event.getLoggerName());
             le.setMessage(event.getMessage());
             le.setTimeStamp(event.getTimeStamp());
+            le.setNodeId(nodeId);
             event.getTimeStamp();
 
             if (HystrixPlugins.getInstance() != null) {

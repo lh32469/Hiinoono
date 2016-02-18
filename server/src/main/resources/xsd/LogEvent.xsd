@@ -19,6 +19,10 @@
                         type="xs:long"/>
             <xs:element name="loggerName"
                         type="xs:string"/>
+            <xs:element name="hostName"
+                        type="xs:string"/>
+            <xs:element name="nodeId"
+                        type="xs:string"/>
             <xs:element name="message"
                         type="xs:string"/>
             <xs:element name="level"
