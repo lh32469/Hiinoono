@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core" 
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:composition template="template.xhtml">
+
+        <ui:define name="center">
+
+            <p:dataTable id="logs"
+                         var="entry" 
+                         widgetVar="logTable"
+                         scrollable="true"
+                       
+                         scrollHeight="95%"
+                      
+                         resizableColumns="true"
+                         style="font-size: x-small"
+                         value="#{logBean.entries}" >
+
+                <f:facet name="header">Last 10 Minutes of Cluster logs.
+                    <p:commandButton id="toggler" 
+                                     type="button" 
+                                     value="Columns"
+                                     style="font-size: xx-small" 
+                                     icon="ui-icon-calculator" />
+                    <p:columnToggler datasource="logs" 
+                                     trigger="toggler" />
+                </f:facet>
+
+                <p:column headerText="Time"
+                          width="8%">                        
+                    <h:outputText
+                        value="#{logBean.convertTime(entry.timeStamp)}" />
+                </p:column>
+
+                <p:column headerText="Node"
+                          width="8%"
+                          filterBy="#{entry.nodeId}"
+                          filterMatchMode="in">
+                    <f:facet name="filter">
+                        <p:selectCheckboxMenu label="Nodes" 
+                                              onchange="PF('logTable').filter()"
+                                              panelStyle="width:150px" 
+                                              scrollHeight="150">
+                            <f:selectItems value="#{logBean.nodes}" />
+                        </p:selectCheckboxMenu>
+                    </f:facet>                  
+                    <h:outputText
+                        value="#{entry.nodeId}" />
+                </p:column>
+
+                <p:column headerText="Level"
+                          width="8%"
+                          filterBy="#{entry.level}"
+                          filterValue="INFO"
+                          filterMatchMode="in">
+                    <f:facet name="filter">
+                        <p:selectCheckboxMenu label="Levels" 
+                                              onchange="PF('logTable').filter()"
+                                              panelStyle="width:125px" 
+                                              scrollHeight="150">
+                            <f:selectItems value="#{logBean.levels}" />
+                        </p:selectCheckboxMenu>
+                    </f:facet>
+                    <h:outputText value="#{entry.level}" />
+                </p:column>
+                <p:column headerText="Logger"
+                          width="18%"
+                          filterBy="#{entry.loggerName}"
+                          filterMatchMode="in">
+                    <f:facet name="filter">
+                        <p:selectCheckboxMenu label="Loggers" 
+                                              onchange="PF('logTable').filter()"
+                                              panelStyle="width:450px" 
+                                              scrollHeight="150">
+                            <f:selectItems value="#{logBean.loggers}" />
+                        </p:selectCheckboxMenu>
+                    </f:facet>
+                    <h:outputText value="#{entry.loggerName}" />
+                </p:column>
+                <p:column headerText="Message">
+                    <h:outputText value="#{entry.message}" />
+                </p:column>
+
+            </p:dataTable>
+        </ui:define>
+
+
+    </ui:composition>
+
+</html>
+

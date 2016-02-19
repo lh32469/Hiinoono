@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core" 
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <ui:composition template="template.xhtml">
+
+        <ui:define name="north" >
+            <h:panelGrid id="filters" 
+                         columns="4" 
+                         cellpadding="5">
+                <p:selectCheckboxMenu id="levels" 
+                                      value="#{sBean.filteredLevels}"
+                                      label="Levels"
+                                      filter="true" 
+                                      filterMatchMode="startsWith" 
+                                      panelStyle="width:250px">
+                    <f:selectItems value="#{logBean.levels}" />
+                </p:selectCheckboxMenu>
+                <p:selectCheckboxMenu id="menu" 
+                                      value="#{sBean.filteredNodes}"
+                                      label="Nodes"
+                                      filter="true" 
+                                      filterMatchMode="startsWith" 
+                                      panelStyle="width:250px">
+                    <f:selectItems value="#{logBean.nodes}" />
+                </p:selectCheckboxMenu>
+                <p:selectCheckboxMenu id="loggers" 
+                                      value="#{sBean.filteredLoggers}"
+                                      label="Loggers"
+                                      filter="true" 
+                                      filterMatchMode="startsWith" 
+                                      panelStyle="width:250px">
+                    <f:selectItems value="#{logBean.loggers}" />
+                </p:selectCheckboxMenu>
+                <p:commandLink value="Filter" 
+                               update="logs,filters" />
+                <!--
+                <p:dataList value="#{sBean.filteredLevels}" 
+                            var="filter" 
+                            style="font-size: xx-small"
+                            emptyMessage="No levels filtered">
+                #{filter}
+            </p:dataList>
+            <p:dataList value="#{sBean.filteredNodes}" 
+                        var="filter" 
+                        style="font-size: xx-small"
+                        emptyMessage="No nodes filtered">
+                #{filter}
+            </p:dataList>
+            <p:dataList value="#{sBean.filteredLoggers}" 
+                        var="filter" 
+                        style="font-size: xx-small"
+                        emptyMessage="No loggers filtered">
+                #{filter}
+            </p:dataList>
+                -->
+            </h:panelGrid>
+
+        </ui:define>
+
+
+        <ui:define name="center">
+
+
+            <script>
+                function scrollToBottom() {
+                    $('.ui-datatable-scrollable-body').scrollTop(1000000)
+                }
+            </script>
+
+            <p:poll interval="3" 
+                    update="logs"
+                    oncomplete="scrollToBottom()"/>
+
+            <p:dataTable id="logs"
+                         var="entry" 
+                         widgetVar="logTable"
+                         scrollable="true"
+                         scrollHeight="95%"
+                         resizableColumns="true"
+                         style="font-size: x-small"
+                         value="#{logBean.entries}" >
+
+                <f:facet name="header">
+                    Streaming Last 10 Minutes of Cluster logs.
+                </f:facet>
+
+                <p:column headerText="Time"
+                          width="8%">                        
+                    <h:outputText
+                        value="#{logBean.convertTime(entry.timeStamp)}" />
+                </p:column>
+
+                <p:column headerText="Node"
+                          width="8%">
+                    <h:outputText
+                        value="#{entry.nodeId}" />
+                </p:column>
+
+                <p:column headerText="Level"
+                          width="8%">
+                    <h:outputText value="#{entry.level}" />
+                </p:column>
+                <p:column headerText="Logger"
+                          width="18%">
+                    <h:outputText value="#{entry.loggerName}" />
+                </p:column>
+                <p:column headerText="Message">
+                    <h:outputText value="#{entry.message}" />
+                </p:column>
+
+            </p:dataTable>
+        </ui:define>
+
+    </ui:composition>
+
+</html>
+

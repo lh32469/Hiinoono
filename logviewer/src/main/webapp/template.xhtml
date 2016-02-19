@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core" 
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+
+    <h:head>
+        <title>Hiinoono Cluster Log Viewer</title>
+    </h:head>
+
+    <h:body>
+
+        <h:form id="Form">
+
+            <p:layout fullPage="true"
+                      style="padding: 5px;">
+
+                <p:layoutUnit position="north" >
+
+                    <!--
+
+                    <p:commandButton value="Dashboard" 
+                                     action="dashboard?faces-redirect=true" >
+                    </p:commandButton>
+
+                    <p:commandButton value="Holdings" 
+                                     action="holdings?faces-redirect=true" >
+                    </p:commandButton>
+
+                    <p:commandButton value="Income" 
+                                     action="income?faces-redirect=true" >
+                    </p:commandButton>
+
+                    <p:commandButton value="Edit" 
+                                     action="edit?faces-redirect=true" >
+                    </p:commandButton>
+
+                    <p:commandButton value="Feedback"
+                                     action="feedback?faces-redirect=true" >
+                    </p:commandButton>
+
+                    -->
+                    <ui:insert name="north"/>
+                </p:layoutUnit>
+
+                <p:layoutUnit position="west">
+                    <div style="padding: 5px;">
+
+                    </div>
+                </p:layoutUnit>
+
+                <p:layoutUnit position="east">
+                    <div style="padding: 15px;">
+
+                    </div>
+                </p:layoutUnit>
+
+                <p:layoutUnit position="south" 
+                              style="font-size: xx-small;padding: 3px"
+                              size="25">
+                    <div id="date1" style="padding: 3px;">
+                        <h:outputText  id="date"
+                                       value="#{sBean.date}" />
+                    </div>
+                </p:layoutUnit>
+
+                <p:layoutUnit id="center"
+                              position="center">
+                    <p:messages id="messages"
+                                showDetail="true"
+                                autoUpdate="true"
+                                closable="true" />
+                    <ui:insert name="center"/>
+                </p:layoutUnit>
+
+
+            </p:layout>
+
+        </h:form>
+    </h:body>
+</html>
+
