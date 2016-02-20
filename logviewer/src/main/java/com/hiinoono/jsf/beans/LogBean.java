@@ -61,7 +61,7 @@ public class LogBean {
 
     public LogBean() {
         count++;
-        LOG.info("Construct: (" + count + ") " + this.toString());
+        //LOG.info("Construct: (" + count + ") " + this.toString());
 
     }
 
@@ -69,13 +69,13 @@ public class LogBean {
     @Override
     protected void finalize() throws Throwable {
         count--;
-        LOG.info("finalize: (" + count + ") " + this.toString());
+        // LOG.info("finalize: (" + count + ") " + this.toString());
     }
 
 
     @PostConstruct
     public void postConstruct() {
-        LOG.info("postConstruct: (" + count + ") " + this.toString());
+        // LOG.info("postConstruct: (" + count + ") " + this.toString());
         jedis = pool.get();
 
         try {
@@ -124,13 +124,13 @@ public class LogBean {
 
     @PreDestroy
     public void preDestroy() {
-        LOG.info("preDestroy: (" + count + ") " + this.toString());
+        //  LOG.info("preDestroy: (" + count + ") " + this.toString());
         pool.release(jedis);
     }
 
 
     public void setPool(RedisPool pool) {
-        LOG.info(pool.toString());
+        //  LOG.info(pool.toString());
         this.pool = pool;
     }
 
@@ -146,7 +146,7 @@ public class LogBean {
         String[] filteredNodes = sBean.getFilteredNodes();
         if (filteredNodes != null) {
             for (String node : filteredNodes) {
-                LOG.info("filteredNode: " + node);
+                // LOG.info("filteredNode: " + node);
                 entries.removeIf(e -> e.getNodeId().contains(node));
             }
         }
@@ -154,7 +154,7 @@ public class LogBean {
         String[] filteredLoggers = sBean.getFilteredLoggers();
         if (filteredLoggers != null) {
             for (String logger : filteredLoggers) {
-                LOG.info("filteredLogger: " + logger);
+                //  LOG.info("filteredLogger: " + logger);
                 entries.removeIf(e -> e.getLoggerName().contains(logger));
             }
         }
@@ -162,7 +162,7 @@ public class LogBean {
         String[] filteredLevels = sBean.getFilteredLevels();
         if (filteredLevels != null) {
             for (String level : filteredLevels) {
-                LOG.info("filteredLevel: " + level);
+                //  LOG.info("filteredLevel: " + level);
                 entries.removeIf(e -> e.getLevel().contains(level));
             }
         }
@@ -172,13 +172,11 @@ public class LogBean {
 
 
     public Set<String> getLevels() {
-        LOG.info("getLevels");
         return levels;
     }
 
 
     public Set<String> getLoggers() {
-        LOG.info("getLoggers");
         return loggers;
     }
 
