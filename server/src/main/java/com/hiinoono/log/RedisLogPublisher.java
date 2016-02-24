@@ -9,6 +9,7 @@ import com.netflix.hystrix.HystrixThreadPoolProperties;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -76,7 +77,7 @@ public class RedisLogPublisher extends HystrixCommand<String> {
 
     @Override
     protected String run() throws Exception {
-        
+
         Marshaller m = jc.createMarshaller();
         ByteArrayOutputStream mem = new ByteArrayOutputStream();
         m.marshal(event, mem);
@@ -97,7 +98,10 @@ public class RedisLogPublisher extends HystrixCommand<String> {
         jedis.publish("Common.txt", sb.toString());
 
         jedis.select(5);
-        String key = event.getTimeStamp() + ".log";
+
+        // For multiple log entries from differenet nodes with same timestamp
+        int rand = Math.abs(new Random().nextInt());
+        String key = event.getTimeStamp() + "-" + rand + ".log";
         jedis.set(key, mem.toString());
         jedis.expire(key, (int) TimeUnit.MINUTES.toSeconds(10));
 
