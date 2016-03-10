@@ -4,7 +4,7 @@ To build and start the server:
 $ mvn clean assembly:assembly -Djavax.xml.accessExternalSchema=all
 $ java -jar target/Hs.jar
 
-The server requires a running ZooKeeper cluster to connect to as defined in the config file
+The server needs to be run as root and requires a running ZooKeeper cluster to connect to as defined in the config file as well as a Volume Group named 'hiinoono' on each server.
 
 Here is a sample config file:
 
